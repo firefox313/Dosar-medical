@@ -276,6 +276,9 @@ div.row{cursor:default}
   body.printing .paperwrap{overflow:visible}
 }
 .row.up{flex-wrap:wrap}.row.up .grow{flex:1 1 150px}.row.up .btn{flex:1 1 100%}
+.sync .dot.warn{background:var(--warn)}.sync .dot.bad{background:var(--bad)}.sync .dot.run{background:var(--m);animation:spin 1s linear infinite;border-radius:50%}
+.sync{max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn[disabled]{opacity:.55}
 
 </style>
 </head>
@@ -289,7 +292,7 @@ div.row{cursor:default}
 </div>
 <script>
 /* ═════ 00 · nucleu: utilitare, iconițe, baza de date locală ═════ */
-const VERSION='1.0.0';
+const VERSION='2.0.0';
 const $=(s,r)=>(r||document).querySelector(s);
 const $$=(s,r)=>Array.prototype.slice.call((r||document).querySelectorAll(s));
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -374,10 +377,11 @@ async function loadAll(){
   const m=await idbAll('meta');if(m.length){META=Object.assign(META,m[0]);if(!META.tomb)META.tomb=[]}
   try{if(navigator.storage&&navigator.storage.persist)persisted=await navigator.storage.persist()}catch(e){}
 }
-function save(type,rec){rec.updatedAt=Date.now();if(!rec.id)rec.id=uid();const a=DB[type],i=a.findIndex(x=>x.id===rec.id);if(i>=0)a[i]=rec;else a.push(rec);idbWrite(type,s=>s.put(rec));return rec}
-function removeRec(type,id){const a=DB[type],i=a.findIndex(x=>x.id===id);if(i>=0)a.splice(i,1);idbWrite(type,s=>s.delete(id));META.tomb.push({t:type,id:id,at:Date.now()});saveMeta()}
-function saveMeta(){META.updatedAt=Date.now();idbWrite('meta',s=>s.put(META))}
-function putBlob(id,blob){idbWrite('blobs',s=>s.put({id:id,blob:blob,type:blob.type,size:blob.size}))}
+function save(type,rec){hk();rec.updatedAt=Date.now();if(!rec.id)rec.id=uid();const a=DB[type],i=a.findIndex(x=>x.id===rec.id);if(i>=0)a[i]=rec;else a.push(rec);idbWrite(type,s=>s.put(rec));return rec}
+function removeRec(type,id){hk();const a=DB[type],i=a.findIndex(x=>x.id===id);if(i>=0)a.splice(i,1);idbWrite(type,s=>s.delete(id));META.tomb.push({t:type,id:id,at:Date.now()});saveMeta()}
+function saveMeta(){hk();META.updatedAt=Date.now();idbWrite('meta',s=>s.put(META))}
+function hk(){setTimeout(()=>{try{if(typeof onLocalChange==='function')onLocalChange()}catch(e){}},0)}
+function putBlob(id,blob){hk();idbWrite('blobs',s=>s.put({id:id,blob:blob,type:blob.type,size:blob.size}))}
 function getBlob(id){return new Promise(res=>{if(!idb)return res(null);try{const q=idbStore('blobs','readonly').get(id);q.onsuccess=()=>res(q.result?q.result.blob:null);q.onerror=()=>res(null)}catch(e){res(null)}})}
 function delBlob(id){idbWrite('blobs',s=>s.delete(id))}
 async function wipeAll(){
@@ -753,7 +757,7 @@ SCHEMAS.person={title:'Profil',
     {k:'allergiesText',l:'Alergii (câte una pe rând)',t:'area'},{k:'notes',l:'Note',t:'area'}],
   save:(v,rec)=>{const r=rec||{color:DB.persons.length%6};Object.assign(r,{name:v.name,born:v.born,sex:v.sex,rel:v.rel,blood:v.blood,allergies:v.allergiesText.split('\n').map(s=>s.trim()).filter(Boolean),notes:v.notes});save('persons',r);if(!S.pid)S.pid=r.id;return r}};
 SCHEMAS.doctor={title:'Medic',
-  fields:(r,ctx)=>{const f=[{k:'name',l:'Nume',t:'text',req:1,ph:'Dr. Nume Prenume'},{k:'specialties',l:'Specialități',t:'multi',opts:()=>optSimple(META.specialties)},
+  fields:(r,ctx)=>{const f=[{k:'name',l:'Nume',t:'text',req:1,ph:'Dr. Nume Prenume'},{k:'specialties',l:'Specialități',t:'multi',opts:()=>optSimple(META.specialties),quick:'specialty',quickLabel:'Specialitate nouă'},
     {k:'facilityIds',l:'Unități medicale',t:'multi',opts:()=>optFacilities().slice(1),quick:'facility',quickLabel:'Unitate nouă'},{k:'phone',l:'Telefon',t:'text',half:1},{k:'email',l:'E-mail',t:'text',half:1},{k:'notes',l:'Note',t:'area'}];
     if(ctx.pid&&DB.persons.length)f.push({k:'gp',l:'Medic de familie pentru profilul curent',t:'check'});return f},
   prep:(r,ctx)=>Object.assign({},r,{gp:!!(ctx.pid&&get('persons',ctx.pid)&&get('persons',ctx.pid).gpId===r.id&&r.id)}),
@@ -763,7 +767,7 @@ SCHEMAS.facility={title:'Unitate medicală',
   fields:()=>[{k:'name',l:'Nume',t:'text',req:1},{k:'kind',l:'Tip',t:'select',opts:()=>optSimple(FACILITY_KINDS)},{k:'city',l:'Localitate',t:'text',half:1},{k:'phone',l:'Telefon',t:'text',half:1},{k:'address',l:'Adresă',t:'text'},{k:'notes',l:'Note',t:'area'}],
   save:(v,rec)=>{const r=rec||{};Object.assign(r,{name:v.name,kind:v.kind,city:v.city,phone:v.phone,address:v.address,notes:v.notes});return save('facilities',r)}};
 SCHEMAS.condition={title:'Afecțiune',
-  fields:()=>[{k:'name',l:'Denumire',t:'text',req:1,ph:'ex. Hipertensiune arterială'},{k:'specialty',l:'Specialitate',t:'select',opts:optSpecs},{k:'start',l:'Data debutului',t:'date',half:1},{k:'end',l:'Data încheierii (gol = activă)',t:'date',half:1},
+  fields:()=>[{k:'name',l:'Denumire',t:'text',req:1,ph:'ex. Hipertensiune arterială'},{k:'specialty',l:'Specialitate',t:'select',opts:optSpecs,quick:'specialty'},{k:'start',l:'Data debutului',t:'date',half:1},{k:'end',l:'Data încheierii (gol = activă)',t:'date',half:1},
     {k:'chronic',l:'Afecțiune cronică',t:'check'},{k:'notes',l:'Note',t:'area'}],
   save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid};Object.assign(r,{name:v.name,specialty:v.specialty,start:v.start||null,end:v.end||null,chronic:v.chronic,notes:v.notes});return save('conditions',r)}};
 SCHEMAS.visit={title:'Vizită',
@@ -772,7 +776,7 @@ SCHEMAS.visit={title:'Vizită',
     {k:'status',l:'Stare',t:'select',opts:()=>optSimple(['efectuată','planificată','anulată'])},
     {k:'types',l:'Tipuri de investigații și servicii',t:'multi',opts:()=>optSimple(META.visitTypes),custom:'Alt tip (opțional, separă cu virgulă)'},
     {k:'doctorId',l:'Medic',t:'select',opts:optDoctors,quick:'doctor',onchange:'visitDoctor'},{k:'facilityId',l:'Unitate medicală',t:'select',opts:optFacilities,quick:'facility'},
-    {k:'specialty',l:'Specialitate',t:'select',opts:optSpecs},{k:'reason',l:'Motivul vizitei',t:'text'},{k:'diagnosis',l:'Diagnostic',t:'text'},
+    {k:'specialty',l:'Specialitate',t:'select',opts:optSpecs,quick:'specialty'},{k:'reason',l:'Motivul vizitei',t:'text'},{k:'diagnosis',l:'Diagnostic',t:'text'},
     {k:'treatment',l:'Tratament recomandat',t:'area'},{k:'notes',l:'Concluzii și note',t:'area'},
     {k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'},
     {k:'cost',l:'Cost ('+(META.currency||'RON')+')',t:'num',half:1,ph:'ex. 250'},{k:'costNote',l:'Observații cost',t:'text',half:1,ph:'plătit, decontat…'},
@@ -793,7 +797,7 @@ SCHEMAS.labreport={title:'Raport de analize',
   prep:(r)=>{if(r.id){r=Object.assign({},r);r.values=reportLabs(r.id).map(l=>({param:l.param,val:l.v!=null?nv(l.v):(l.vt||''),u:l.u,lo:l.lo!=null?nv(l.lo):'',hi:l.hi!=null?nv(l.hi):''}))}return r},
   fields:(r,ctx)=>[{k:'date',l:'Data recoltării',t:'date',req:1,half:1},{k:'facilityId',l:'Laborator / unitate',t:'select',opts:optFacilities,quick:'facility',half:1},
     {k:'visitId',l:'Vizită legată',t:'select',opts:()=>optVisits(ctx.pid)},{k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'},
-    {k:'specialty',l:'Specialitate (opțional)',t:'select',opts:optSpecs},
+    {k:'specialty',l:'Specialitate (opțional)',t:'select',opts:optSpecs,quick:'specialty'},
     {k:'values',l:'Valori',t:'rows',help:'Valoare numerică sau text (ex. „negativ”). Intervalul de referință se copiază exact de pe buletin.'},
     {k:'notes',l:'Note',t:'area'},{k:'files',l:'Buletin (poze sau PDF)',t:'files'}],
   save:async(v,rec,ctx)=>{const r=rec||{personId:ctx.pid};Object.assign(r,{date:v.date,facilityId:v.facilityId||null,visitId:v.visitId||null,conditionIds:v.conditionIds,specialty:v.specialty,notes:v.notes});
@@ -826,6 +830,8 @@ SCHEMAS.reminder={title:'Reminder',
   fields:()=>[{k:'title',l:'Ce trebuie făcut',t:'text',req:1},{k:'date',l:'Data',t:'date',req:1,half:1},{k:'kind',l:'Tip',t:'select',half:1,opts:()=>optSimple(['Control','Analize','Vaccin','Altele'])}],
   save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid,refType:null,refId:null,cal:false};Object.assign(r,{title:v.title,date:v.date,kind:v.kind});return save('reminders',r)}};
 
+SCHEMAS.specialty={title:'Specialitate',fields:()=>[{k:'name',l:'Denumire',t:'text',req:1,ph:'ex. Neurologie'}],
+  save:(v)=>{const n=v.name.trim();if(META.specialties.indexOf(n)<0){META.specialties.push(n);saveMeta()}return {id:n,name:n}}};
 const FORM_CB={};
 function openForm(type,o){
   o=o||{};const sc=SCHEMAS[type];if(!sc)return;const rec=o.id?get(COLL[type],o.id):null;
@@ -1199,10 +1205,11 @@ function vSetari(){
     <form class="inl" data-inl="type"><input type="text" name="v" placeholder="Tip nou" autocomplete="off"><button class="btn sm" type="submit">Adaugă</button></form></div>
    <div class="card"><h2>Calendar și cost</h2><div class="setrow"><div><div class="t">Titluri generice în Calendar</div><div class="sub">„Control – Ilinca”, fără motiv sau diagnostic</div></div>${sw('genericCal',META.genericCal)}</div>
     <div class="sep"></div><label class="f" style="margin:0">Moneda<select id="cur"><option ${META.currency==='RON'?'selected':''}>RON</option><option ${META.currency==='EUR'?'selected':''}>EUR</option><option ${META.currency==='USD'?'selected':''}>USD</option></select></label></div>
-   <div class="card"><h2>Copie de rezervă ${ic('dl',18)}</h2><p class="sub" style="margin-bottom:10px">Un fișier cu toate datele și documentele de pe acest dispozitiv. Păstrează-l într-un loc sigur, pentru că nu e criptat în această versiune.</p>
+   ${syncCard()}
+   <div class="card"><h2>Copie de rezervă ${ic('dl',18)}</h2><p class="sub" style="margin-bottom:10px">Un fișier cu toate datele și documentele de pe acest dispozitiv. Păstrează-l într-un loc sigur, și nu e criptat.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="backup">${ic('dl',16)}Exportă tot</button><button class="btn ghost" data-act="restorepick">${ic('upload',16)}Restaurează</button></div><p class="sub" id="stor" style="margin-top:10px"></p></div>
    <div class="card"><h2>Instalare</h2><div class="sub">iPhone: în Safari, Partajează, apoi „Adaugă pe ecranul principal”.<br>Android: în Chrome, meniul ⋮, apoi „Instalează aplicația”.<br>Laptop: în Chrome sau Edge, pictograma de instalare din bara de adrese.</div></div>
-   <div class="card"><h2>Ce urmează în aplicație</h2><ul class="road"><li><b>Etapa 2:</b> sincronizare prin Google Drive între telefoane și laptop, cu criptare opțională cu parola comună.</li><li><b>Etapa 3:</b> scanarea documentelor și extragerea valorilor din analize, cu confirmarea ta, plus AI direct cu cheia ta.</li><li><b>Mai târziu:</b> date de la ceas (Garmin / Google Health), dacă se poate fără server.</li></ul><div class="sub" style="margin-top:8px">Versiunea ${VERSION}</div></div>
+   <div class="card"><h2>Ce urmează în aplicație</h2><ul class="road"><li><b>Etapa 2 (gata):</b> sincronizare prin Google Drive între telefoane și laptop, cu criptare opțională cu parola comună.</li><li><b>Etapa 3:</b> scanarea documentelor și extragerea valorilor din analize, cu confirmarea ta, plus AI direct cu cheia ta.</li><li><b>Mai târziu:</b> date de la ceas (Garmin / Google Health), dacă se poate fără server.</li></ul><div class="sub" style="margin-top:8px">Versiunea ${VERSION}</div></div>
    <div class="card"><h2>Date de pe acest dispozitiv</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-act="demo">Încarcă date de exemplu</button><button class="btn ghost danger" data-act="wipeask">${ic('trash',16)}Șterge tot</button></div></div>`}
 
 /* ───── detalii în panouri ───── */
@@ -1239,7 +1246,7 @@ function route(v){
   return {title:title||'',action:T[1],html:fn(v)}}
 function header(r){
   if(r.welcome)return `<div class="top-row"><div class="brand"><span class="logo">${ic('cross',16)}</span>Jurnal medical</div></div>`;
-  if(r.root)return `<div class="top-row"><div class="brand"><span class="logo">${ic('cross',16)}</span>Jurnal medical</div><button class="sync" data-act="tab" data-v="setari" aria-label="Date salvate pe acest dispozitiv"><span class="dot"></span>Salvat pe dispozitiv</button></div>
+  if(r.root)return `<div class="top-row"><div class="brand"><span class="logo">${ic('cross',16)}</span>Jurnal medical</div><button class="sync" data-act="sy-chip" aria-label="Stare sincronizare">${(()=>{const s=syncChip();return `<span class="dot ${s[1]}"></span>${esc(s[0])}`})()}</button></div>
     <div class="members" role="group" aria-label="Alege profilul">${DB.persons.map(x=>`<button class="mem" aria-pressed="${x.id===S.pid}" data-act="person" data-id="${x.id}"><span class="av" style="--mc:var(--m${memberColor(x)})">${esc(x.name[0]||'?')}</span>${esc(x.name)}</button>`).join('')}<button class="mem" data-act="add" data-type="person" aria-label="Adaugă profil"><span class="av" style="--mc:var(--muted)">+</span>Profil</button></div>`;
   return `<div class="top-row"><button class="iconbtn" data-act="back" aria-label="Înapoi">${ic('back')}</button><h1 class="pagetitle">${esc(r.title)}</h1>${r.action?`<button class="btn sm" data-act="add" data-type="${r.action[0]}">${ic('plus',16)}${esc(r.action[1])}</button>`:''}</div>`}
 const TABS=[['profil','Profil','home'],['istoric','Istoric','clock'],['analiza','Analiză','chart'],['export','Export','share'],['setari','Setări','sliders']];
@@ -1259,6 +1266,276 @@ function render(keep){
   if(!keep)window.scrollTo(0,0);
   hydrateThumbs();
   const st=$('#stor');if(st&&navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{const el=$('#stor');if(el)el.textContent='Spațiu folosit: '+nf((e.usage||0)/1048576,1)+' MB. '+(persisted?'Browserul a acceptat păstrarea permanentă a datelor.':'Browserul poate șterge datele dacă rămâne fără spațiu, de aceea fă copii de rezervă.')})}
+
+/* ═════ 45 · sincronizare prin Google Drive (cu criptare opțională) ═════
+   Fiecare înregistrare e un fișier mic în folderul partajat (r_<id>.json), documentele sunt b_<id>,
+   setările comune m_meta.json, iar config.json spune dacă folderul e criptat.
+   Regula la conflict: câștigă modificarea mai recentă a aceleiași înregistrări. */
+const SCOPE='https://www.googleapis.com/auth/drive';
+const DRV='https://www.googleapis.com/drive/v3/files';
+const LSG=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const LSS=(k,v)=>{try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const SY={cfg:Object.assign({cid:'',folderName:'Jurnal medical familie',folderId:'',remember:true,keyJwk:null},LSG('jm-sync',{})),map:LSG('jm-syncmap',{}),last:LSG('jm-synclast',0),
+  key:null,conf:null,busy:false,inter:false,err:'',prog:'',applying:false};
+let TOK=LSG('jm-tok',null),SYT=null;
+const saveCfg=()=>LSS('jm-sync',SY.cfg),saveMap=()=>LSS('jm-syncmap',SY.map);
+const tokOk=()=>!!(TOK&&TOK.e>Date.now()+60000);
+const syOn=()=>!!SY.cfg.folderId;
+const te=new TextEncoder(),td=new TextDecoder();
+
+/* ───── Google: autentificare ───── */
+function loadGis(){return new Promise((res,rej)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return res();
+  const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=()=>res();s.onerror=()=>rej(new Error('Nu pot încărca Google. Ești conectat la internet?'));document.head.appendChild(s)})}
+async function getToken(){
+  if(tokOk())return TOK.t;
+  if(!SY.inter)throw new Error('NEED_AUTH');
+  if(!SY.cfg.cid)throw new Error('Lipsește Client ID-ul Google.');
+  await loadGis();
+  return new Promise((res,rej)=>{
+    const tc=google.accounts.oauth2.initTokenClient({client_id:SY.cfg.cid,scope:SCOPE,
+      callback:r=>{if(r.error)return rej(new Error('Google a refuzat conectarea ('+r.error+').'));TOK={t:r.access_token,e:Date.now()+(r.expires_in||3600)*1000};LSS('jm-tok',TOK);res(TOK.t)},
+      error_callback:()=>rej(new Error('Fereastra Google a fost închisă sau blocată. Încearcă din nou.'))});
+    tc.requestAccessToken({prompt:''})})}
+async function errText(r){try{const j=await r.json();return 'Google: '+((j.error&&j.error.message)||r.status)}catch(e){return 'Eroare Google '+r.status}}
+async function gapi(url,opt,n){
+  n=n||0;const t=await getToken();
+  let r;try{r=await fetch(url,Object.assign({},opt,{headers:Object.assign({Authorization:'Bearer '+t},(opt&&opt.headers)||{})}))}catch(e){throw new Error('Nu există conexiune la internet.')}
+  if(r.status===401&&n<1){TOK=null;LSS('jm-tok',null);return gapi(url,opt,n+1)}
+  if((r.status===429||r.status>=500)&&n<3){await new Promise(z=>setTimeout(z,900*(n+1)));return gapi(url,opt,n+1)}
+  return r}
+async function jget(url){const r=await gapi(url);if(!r.ok)throw new Error(await errText(r));return r.json()}
+const qs='&supportsAllDrives=true&includeItemsFromAllDrives=true';
+
+/* ───── folder și fișiere ───── */
+async function listCandidates(){
+  const q=encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='"+SY.cfg.folderName.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"' and trashed=false");
+  return (await jget(DRV+'?q='+q+'&fields=files(id,name,owners(emailAddress))&pageSize=20'+qs)).files||[]}
+async function createFolder(){
+  const r=await gapi(DRV+'?fields=id,name',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:SY.cfg.folderName,mimeType:'application/vnd.google-apps.folder'})});
+  if(!r.ok)throw new Error(await errText(r));return r.json()}
+async function listRemote(){
+  const out={};let pt='';
+  do{const q=encodeURIComponent("'"+SY.cfg.folderId+"' in parents and trashed=false");
+    const j=await jget(DRV+'?q='+q+'&fields=nextPageToken,files(id,name,modifiedTime,size)&pageSize=1000'+qs+(pt?'&pageToken='+pt:''));
+    (j.files||[]).forEach(f=>{out[f.name]=f});pt=j.nextPageToken}while(pt);
+  return out}
+async function putFile(name,body,mime,existingId){
+  if(existingId){
+    const r=await gapi('https://www.googleapis.com/upload/drive/v3/files/'+existingId+'?uploadType=media&fields=id,modifiedTime'+qs,{method:'PATCH',headers:{'Content-Type':mime},body});
+    if(!r.ok)throw new Error(await errText(r));return r.json()}
+  const b='jm'+uid(),meta=JSON.stringify({name,parents:[SY.cfg.folderId]});
+  const body2=new Blob(['--'+b+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+meta+'\r\n--'+b+'\r\nContent-Type: '+mime+'\r\n\r\n',body,'\r\n--'+b+'--'],{type:'multipart/related; boundary='+b});
+  const r=await gapi('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,modifiedTime'+qs,{method:'POST',body:body2});
+  if(!r.ok)throw new Error(await errText(r));return r.json()}
+async function getFile(id){const r=await gapi(DRV+'/'+id+'?alt=media'+qs);if(!r.ok)throw new Error(await errText(r));return new Uint8Array(await r.arrayBuffer())}
+async function delRemote(f){
+  const r=await gapi(DRV+'/'+f.id+'?'+qs.slice(1),{method:'DELETE'});
+  if(r.ok||r.status===404)return;
+  /* dacă nu avem voie să ștergem fișierul altcuiva, îl golim și îl marcăm ca șters */
+  await putFile(f.name,f.name.indexOf('r_')===0?'{"deleted":1}':'',f.name.indexOf('r_')===0?'application/json':'application/octet-stream',f.id)}
+
+/* ───── criptare (AES-GCM, cheie din parolă cu PBKDF2) ───── */
+const b64=u=>{let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function deriveKey(pw,salt){
+  const km=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:unb64(salt),iterations:250000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},true,['encrypt','decrypt'])}
+async function encBytes(u8){const iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},SY.key,u8)),o=new Uint8Array(12+ct.length);o.set(iv);o.set(ct,12);return o}
+async function decBytes(u8){return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:u8.subarray(0,12)},SY.key,u8.subarray(12)))}
+async function tryUnlock(pw){
+  const key=await deriveKey(pw,SY.conf.salt);const k0=SY.key;SY.key=key;
+  try{if(td.decode(await decBytes(unb64(SY.conf.check)))!=='jm-ok')throw 0}catch(e){SY.key=k0;return false}
+  if(SY.cfg.remember){SY.cfg.keyJwk=await crypto.subtle.exportKey('jwk',key);saveCfg()}return true}
+async function restoreKey(){
+  if(SY.key||!SY.cfg.keyJwk)return;
+  try{const key=await crypto.subtle.importKey('jwk',SY.cfg.keyJwk,{name:'AES-GCM'},true,['encrypt','decrypt']);const k0=SY.key;SY.key=key;
+    try{if(td.decode(await decBytes(unb64(SY.conf.check)))!=='jm-ok')throw 0}catch(e){SY.key=k0}}catch(e){}}
+
+async function packRec(o){const s=JSON.stringify(o);return SY.conf.enc?{body:await encBytes(te.encode(s)),mime:'application/octet-stream'}:{body:s,mime:'application/json'}}
+async function unpackRec(u8){
+  if(SY.key){try{return {c:JSON.parse(td.decode(await decBytes(u8))),enc:true}}catch(e){}}
+  return {c:JSON.parse(td.decode(u8)),enc:false}}
+
+/* ───── date locale ───── */
+const SYNC_TYPES=DATA.filter(x=>x!=='labs');
+function localItems(){const m={};SYNC_TYPES.forEach(t=>DB[t].forEach(r=>{m['r_'+r.id+'.json']={t,r}}));return m}
+function putLocal(t,rec){const a=DB[t],i=a.findIndex(x=>x.id===rec.id);if(i>=0)a[i]=rec;else a.push(rec);idbWrite(t,s=>s.put(rec))}
+function removeLocal(t,id){const a=DB[t],i=a.findIndex(x=>x.id===id);if(i>=0)a.splice(i,1);idbWrite(t,s=>s.delete(id));
+  if(t==='docs')delBlob(id);
+  if(t==='labreports')DB.labs.filter(l=>l.reportId===id).forEach(l=>{const j=DB.labs.indexOf(l);if(j>=0)DB.labs.splice(j,1);idbWrite('labs',s=>s.delete(l.id))})}
+function contentOf(t,r){const o={t,rec:r};if(t==='labreports')o.labs=DB.labs.filter(l=>l.reportId===r.id);return o}
+function applyContent(c){
+  if(c.deleted)return false;
+  putLocal(c.t,c.rec);
+  if(c.t==='labreports'){DB.labs.filter(l=>l.reportId===c.rec.id).forEach(l=>{const j=DB.labs.indexOf(l);if(j>=0)DB.labs.splice(j,1);idbWrite('labs',s=>s.delete(l.id))});(c.labs||[]).forEach(l=>putLocal('labs',l))}
+  return true}
+function hasBlob(id){return new Promise(res=>{if(!idb)return res(false);try{const q=idbStore('blobs','readonly').count(id);q.onsuccess=()=>res(q.result>0);q.onerror=()=>res(false)}catch(e){res(false)}})}
+function pendingCount(){let n=0;SYNC_TYPES.forEach(t=>DB[t].forEach(r=>{const s=SY.map['r_'+r.id+'.json'];if(!s||(r.updatedAt||0)>s.ut)n++}));return n+(META.tomb||[]).length}
+async function pool(jobs,n,onStep){let i=0,done=0,fail=null;
+  await Promise.all(Array.from({length:n},async()=>{while(i<jobs.length&&!fail){const j=jobs[i++];try{await j();done++;if(onStep)onStep(done,jobs.length)}catch(e){fail=fail||e}}}));
+  if(fail)throw fail}
+
+/* ───── configurația folderului ───── */
+async function loadConfig(remote){
+  const f=remote['config.json'];
+  if(!f){SY.conf={v:1,enc:false};const r=await putFile('config.json',JSON.stringify(SY.conf),'application/json');remote['config.json']={id:r.id,name:'config.json',modifiedTime:r.modifiedTime};return}
+  SY.conf=JSON.parse(td.decode(await getFile(f.id)));
+  if(SY.conf.enc){await restoreKey();if(!SY.key)throw new Error('NEED_PW')}}
+
+/* ───── sincronizarea propriu-zisă ───── */
+async function syncNow(inter){
+  if(SY.busy||!syOn())return;
+  SY.busy=true;SY.inter=!!inter;SY.err='';SY.prog='';refreshSyncUi();SY.applying=true;
+  try{
+    await getToken();
+    const remote=await listRemote();await loadConfig(remote);
+    const local=localItems(),map=SY.map,conf=SY.conf,wantEnc=!!conf.enc,stats={up:0,down:0,del:0},jobs=[];
+    const up=async(name,t,r,rf)=>{const p=await packRec(contentOf(t,r)),res=await putFile(name,p.body,p.mime,rf&&rf.id);map[name]={fid:res.id,mt:res.modifiedTime,ut:r.updatedAt||0,enc:wantEnc};stats.up++};
+    const pull=async(name,rf,t,r)=>{ /* t,r: înregistrarea locală, dacă există */
+      const {c,enc}=await unpackRec(await getFile(rf.id)),sm=map[name];
+      if(c.deleted){if(r&&sm&&(r.updatedAt||0)>sm.ut)return up(name,t,r,rf);if(r)removeLocal(t,r.id);delete map[name];stats.del++;return}
+      const ru=(c.rec&&c.rec.updatedAt)||0;
+      if(r&&(r.updatedAt||0)>ru)return up(name,t,r,rf);
+      if(!r||ru>(r.updatedAt||0)){applyContent(c);stats.down++}
+      map[name]={fid:rf.id,mt:rf.modifiedTime,ut:ru,enc}};
+    /* 1. ștergeri făcute pe acest dispozitiv */
+    for(const tb of (META.tomb||[])){
+      if(tb.t==='labs')continue;const rn='r_'+tb.id+'.json',bn='b_'+tb.id;
+      if(remote[rn]){const f=remote[rn];jobs.push(()=>delRemote(f));delete remote[rn];delete map[rn]}
+      if(remote[bn]){const f=remote[bn];jobs.push(()=>delRemote(f));delete remote[bn];delete map[bn]}}
+    /* 2. înregistrări locale */
+    for(const name in local){
+      const {t,r}=local[name],sm=map[name],rf=remote[name];
+      if(!rf){if(sm&&(r.updatedAt||0)<=sm.ut)jobs.push(async()=>{removeLocal(t,r.id);delete map[name];stats.del++});else jobs.push(()=>up(name,t,r))}
+      else if(!sm)jobs.push(()=>pull(name,rf,t,r));
+      else{const rc=rf.modifiedTime!==sm.mt,lc=(r.updatedAt||0)>sm.ut||(!!sm.enc!==wantEnc);
+        if(rc)jobs.push(()=>pull(name,rf,t,r));else if(lc)jobs.push(()=>up(name,t,r,rf))}}
+    /* 3. înregistrări doar în Drive */
+    for(const name in remote){
+      if(name.indexOf('r_')!==0||local[name])continue;
+      const rf=remote[name];if(+rf.size===0)continue;
+      jobs.push(()=>pull(name,rf,null,null))}
+    await pool(jobs,4,(d,n)=>{SY.prog=d+' / '+n;refreshSyncUi()});
+    /* 4. setări comune */
+    {const name='m_meta.json',rf=remote[name],sm=map[name],mine=()=>({specialties:META.specialties,visitTypes:META.visitTypes,currency:META.currency,genericCal:META.genericCal,updatedAt:META.updatedAt||0});
+      const upM=async()=>{const p=await packRec({t:'meta',rec:mine()}),res=await putFile(name,p.body,p.mime,rf&&rf.id);map[name]={fid:res.id,mt:res.modifiedTime,ut:META.updatedAt||0,enc:wantEnc}};
+      const pullM=async()=>{const {c,enc}=await unpackRec(await getFile(rf.id)),ru=(c.rec&&c.rec.updatedAt)||0;
+        if(ru>(META.updatedAt||0)){['specialties','visitTypes','currency','genericCal'].forEach(k=>{if(c.rec[k]!=null)META[k]=c.rec[k]});META.updatedAt=ru;idbWrite('meta',s=>s.put(META))}
+        else if((META.updatedAt||0)>ru)return upM();
+        map[name]={fid:rf.id,mt:rf.modifiedTime,ut:ru,enc}};
+      if(!rf)await upM();else if(!sm||rf.modifiedTime!==sm.mt)await pullM();else if((META.updatedAt||0)>sm.ut||(!!sm.enc!==wantEnc))await upM()}
+    /* 5. documente (poze, PDF) */
+    const bj=[];
+    for(const d of DB.docs.slice()){
+      const name='b_'+d.id,rf=remote[name],sm=map[name],has=await hasBlob(d.id);
+      if(has&&(!rf||(sm&&!!sm.enc!==wantEnc)))bj.push(async()=>{
+        const b=await getBlob(d.id);if(!b)return;const raw=new Uint8Array(await b.arrayBuffer());
+        const res=await putFile(name,wantEnc?await encBytes(raw):raw,wantEnc?'application/octet-stream':(d.mime||'application/octet-stream'),rf&&rf.id);
+        map[name]={fid:res.id,mt:res.modifiedTime,ut:0,enc:wantEnc};stats.up++});
+      else if(!has&&rf&&+rf.size>0)bj.push(async()=>{
+        let u=await getFile(rf.id),enc=false;if(wantEnc){try{u=await decBytes(u);enc=true}catch(e){}}
+        putBlob(d.id,new Blob([u],{type:d.mime||'application/octet-stream'}));map[name]={fid:rf.id,mt:rf.modifiedTime,ut:0,enc};stats.down++})}
+    await pool(bj,3,(d,n)=>{SY.prog='documente '+d+' / '+n;refreshSyncUi()});
+    /* 6. curățenie */
+    META.tomb=[];idbWrite('meta',s=>s.put(META));
+    SY.last=Date.now();LSS('jm-synclast',SY.last);saveMap();
+    SY.stats=stats;
+    if(stats.down||stats.del)render(true);
+  }catch(e){
+    saveMap();
+    if(e.message==='NEED_AUTH')SY.err='Apasă „Sincronizează acum” ca să te reconectezi la Google.';
+    else if(e.message==='NEED_PW'){SY.err='Folderul e criptat. Introdu parola comună.';if(inter)askPassword(false)}
+    else SY.err=e.message||String(e)
+  }finally{SY.busy=false;SY.applying=false;SY.prog='';refreshSyncUi();
+    if(!SY.err&&syOn()&&tokOk()&&pendingCount()>0&&!SY.retried){SY.retried=true;setTimeout(()=>syncNow(false),1500)}else SY.retried=false}}
+
+/* ───── legătura cu restul aplicației ───── */
+function onLocalChange(){
+  if(SY.applying){return}
+  if(syOn()&&tokOk()){clearTimeout(SYT);SYT=setTimeout(()=>syncNow(false),4000)}
+  refreshSyncUi()}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&syOn()&&tokOk()&&Date.now()-SY.last>120000)syncNow(false)});
+
+function syncChip(){
+  if(!syOn())return ['Salvat pe dispozitiv',''];
+  if(SY.busy)return ['Se sincronizează…','run'];
+  if(SY.err)return ['Sincronizare eșuată','bad'];
+  const n=pendingCount();
+  if(n)return [tokOk()?'De sincronizat · '+n:'Apasă pentru sincronizare','warn'];
+  if(!SY.last)return ['Apasă pentru sincronizare','warn'];
+  const d=new Date(SY.last);return ['Sincronizat '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),'']}
+function refreshSyncUi(){
+  const c=$('.sync');if(c){const s=syncChip();c.innerHTML=`<span class="dot ${s[1]}"></span>${esc(s[0])}`}
+  const k=$('#sycard');if(k)k.innerHTML=syncCardInner()}
+
+function syncCardInner(){
+  const on=syOn();
+  if(!on)return `<h2>Sincronizare Google Drive</h2><p class="sub" style="margin-bottom:12px">Datele se copiază într-un folder din Drive-ul tău, partajat cu soția. Nimeni altcineva nu le vede și nu trec prin alt server. Pe al doilea telefon sau pe laptop, conectezi același folder și pornești cu aplicația goală, ca să nu apară profiluri duble.</p>
+    <label class="f">Client ID Google<input type="text" id="sy-cid" value="${esc(SY.cfg.cid)}" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    <label class="f">Numele folderului din Drive<input type="text" id="sy-folder" value="${esc(SY.cfg.folderName)}" autocomplete="off"></label>
+    <button class="btn block" data-act="sy-connect">${ic('cloud',16)}Conectează Google Drive</button>${SY.err?`<div class="callout bad" style="margin-top:10px">${ic('alert',16)}<div>${esc(SY.err)}</div></div>`:''}`;
+  const cf=SY.conf,last=SY.last?fd(new Date(SY.last).toISOString().slice(0,10))+', '+new Date(SY.last).toTimeString().slice(0,5):'încă nu';
+  return `<h2>Sincronizare Google Drive ${ic('cloud',18)}</h2>
+    <div class="kv" style="margin-bottom:10px"><span>Folder</span><span>${esc(SY.cfg.folderName)}</span><span>Ultima sincronizare</span><span>${esc(last)}</span><span>De trimis</span><span>${pendingCount()} modificări</span></div>
+    ${SY.busy?`<div class="callout">${ic('cloud')}<div>Se sincronizează… ${esc(SY.prog)}</div></div>`:''}
+    ${SY.err?`<div class="callout bad" style="margin-top:8px">${ic('alert',16)}<div>${esc(SY.err)}</div></div>`:''}
+    ${!SY.busy&&SY.stats&&!SY.err?`<div class="sub">Ultima rulare: ${SY.stats.up} trimise, ${SY.stats.down} primite${SY.stats.del?', '+SY.stats.del+' șterse':''}.</div>`:''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" data-act="sy-now"${SY.busy?' disabled':''}>${ic('cloud',16)}Sincronizează acum</button><button class="btn ghost" data-act="sy-disc">Deconectează</button></div>
+    ${cf?`<div class="sep"></div><div class="setrow"><div><div class="t">Criptare cu parola comună</div><div class="sub">${cf.enc?'Activă: fișierele din Drive sunt ilizibile fără parolă.':'Oprită: fișierele din Drive sunt text simplu, vizibile oricui are acces la folder.'}</div></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${cf.enc?`<button class="btn ghost sm" data-act="sy-enc-off">Oprește criptarea</button>`:`<button class="btn ghost sm" data-act="sy-enc-on">Activează criptarea</button>`}</div>
+      ${cf.enc?`<div class="setrow"><div><div class="t">Ține minte parola pe acest dispozitiv</div><div class="sub">Dacă o oprești, ți-o cere la fiecare deschidere.</div></div><button class="sw" role="switch" aria-checked="${!!SY.cfg.remember}" data-act="sy-rem" aria-label="Comutator"></button></div>`:''}`:''}
+    <p class="sub" style="margin-top:10px">Aplicația se sincronizează automat după fiecare modificare, cât timp conexiunea Google e activă (cam o oră). Apoi apeși „Sincronizează acum”.</p>`}
+const syncCard=()=>`<div class="card" id="sycard">${syncCardInner()}</div>`;
+
+/* ───── acțiuni din interfață ───── */
+function askPassword(create){
+  openPanel(create?'Alege parola comună':'Parola comună',`<p style="margin-bottom:12px">${create?'Aceeași parolă o vei introduce și pe celelalte dispozitive. <b>Nu poate fi recuperată</b>: dacă o uiți, datele criptate din Drive nu se mai pot citi (copia de rezervă de pe telefon rămâne bună).':'Folderul e criptat. Introdu parola comună a familiei.'}</p>
+    <form data-pw="${create?'new':'ask'}"><label class="f">Parola<input type="password" name="pw" autocomplete="${create?'new-password':'current-password'}"></label>${create?`<label class="f">Repetă parola<input type="password" name="pw2" autocomplete="new-password"></label>`:''}<div class="fbtns"><button class="btn block" type="submit">${create?'Activează criptarea':'Deblochează'}</button></div></form>`)}
+async function pwSubmit(f){
+  const pw=f.elements.pw.value,create=f.dataset.pw==='new';
+  if(pw.length<8){toast('Parola trebuie să aibă cel puțin 8 caractere');return}
+  if(create&&f.elements.pw2.value!==pw){toast('Parolele nu coincid');return}
+  const btn=$('button[type=submit]',f);btn.disabled=true;btn.textContent='Se calculează…';
+  try{
+    if(create){
+      SY.inter=true;const remote=await listRemote();await loadConfig(remote).catch(e=>{if(e.message!=='NEED_PW')throw e});
+      if(SY.conf&&SY.conf.enc){closeAllPanels();toast('Criptarea e deja activă. Introdu parola existentă.');askPassword(false);return}
+      const salt=b64(crypto.getRandomValues(new Uint8Array(16)));SY.key=await deriveKey(pw,salt);
+      SY.conf={v:1,enc:true,salt,check:b64(await encBytes(te.encode('jm-ok')))};
+      if(SY.cfg.remember){SY.cfg.keyJwk=await crypto.subtle.exportKey('jwk',SY.key);saveCfg()}
+      await putFile('config.json',JSON.stringify(SY.conf),'application/json',remote['config.json']&&remote['config.json'].id);
+      closeAllPanels();toast('Criptarea e activă. Rescriu fișierele…');syncNow(true)}
+    else{
+      if(!SY.conf){const remote=await listRemote();await loadConfig(remote).catch(e=>{if(e.message!=='NEED_PW')throw e})}
+      if(await tryUnlock(pw)){closeAllPanels();syncNow(true)}else{toast('Parolă greșită');btn.disabled=false;btn.textContent='Deblochează'}}
+  }catch(e){toast(e.message==='NEED_AUTH'?'Conectează-te mai întâi la Google':e.message);btn.disabled=false;btn.textContent=create?'Activează criptarea':'Deblochează'}}
+
+function setFolder(f){SY.cfg.folderId=f.id;SY.map={};SY.conf=null;SY.last=0;LSS('jm-synclast',0);saveCfg();saveMap();closeAllPanels();render(true);syncNow(true)}
+async function syConnect(){
+  const cid=($('#sy-cid').value||'').trim(),fn=($('#sy-folder').value||'').trim()||'Jurnal medical familie';
+  if(!/\.apps\.googleusercontent\.com$/.test(cid)){toast('Client ID-ul se termină în .apps.googleusercontent.com');return}
+  SY.cfg.cid=cid;SY.cfg.folderName=fn;saveCfg();SY.inter=true;
+  try{
+    await getToken();const c=await listCandidates();
+    if(c.length===1){setFolder(c[0]);return}
+    if(!c.length)openPanel('Folderul nu există',`<p style="margin-bottom:14px">Nu am găsit niciun folder numit „${esc(fn)}” la care ai acces. Dacă soția l-a creat deja, cere-i să-l partajeze cu tine (drept de editare), apoi încearcă din nou. Dacă e primul dispozitiv, îl pot crea eu.</p><div class="fbtns"><button class="btn block" data-act="sy-create">Creează folderul în Drive-ul meu</button><button class="btn ghost block" data-act="close">Renunț</button></div>`);
+    else openPanel('Alege folderul',`<p style="margin-bottom:12px">Am găsit mai multe foldere cu acest nume. Alege-l pe cel comun.</p><div class="list">${c.map(f=>`<button class="row" data-act="sy-pick" data-id="${esc(f.id)}"><div class="grow"><div class="t">${esc(f.name)}</div><div class="s">proprietar: ${esc(((f.owners||[{}])[0]||{}).emailAddress||'necunoscut')}</div></div>${ic('chev',16)}</button>`).join('')}</div>`);
+  }catch(e){SY.err=e.message;refreshSyncUi();toast(e.message)}}
+async function syAct(a,el){
+  switch(a){
+    case 'sy-connect':syConnect();break;
+    case 'sy-now':syncNow(true);break;
+    case 'sy-chip':if(syOn())syncNow(true);else goTab('setari');break;
+    case 'sy-create':try{SY.inter=true;setFolder(await createFolder())}catch(e){toast(e.message)}break;
+    case 'sy-pick':setFolder({id:el.dataset.id});break;
+    case 'sy-disc':SY.cfg.folderId='';SY.cfg.keyJwk=null;SY.key=null;SY.conf=null;SY.map={};SY.err='';TOK=null;LSS('jm-tok',null);saveCfg();saveMap();render(true);toast('Deconectat. Datele rămân pe acest dispozitiv.');break;
+    case 'sy-rem':SY.cfg.remember=!SY.cfg.remember;if(!SY.cfg.remember)SY.cfg.keyJwk=null;else if(SY.key)SY.cfg.keyJwk=await crypto.subtle.exportKey('jwk',SY.key);saveCfg();refreshSyncUi();break;
+    case 'sy-enc-on':if(!tokOk()){toast('Apasă mai întâi „Sincronizează acum”');break}askPassword(true);break;
+    case 'sy-enc-off':
+      if(!tokOk()){toast('Apasă mai întâi „Sincronizează acum”');break}
+      openPanel('Oprești criptarea?',`<p style="margin-bottom:14px">Fișierele din Drive vor fi rescrise ca text simplu, vizibil oricui are acces la folder. Celelalte dispozitive vor continua fără parolă.</p><div class="fbtns"><button class="btn danger-solid block" data-act="sy-enc-off-go">Oprește criptarea</button><button class="btn ghost block" data-act="close">Renunț</button></div>`);break;
+    case 'sy-enc-off-go':try{SY.inter=true;const remote=await listRemote();await loadConfig(remote);SY.conf={v:1,enc:false};await putFile('config.json',JSON.stringify(SY.conf),'application/json',remote['config.json'].id);saveCfg();closeAllPanels();toast('Criptarea a fost oprită. Rescriu fișierele…');syncNow(true)}catch(e){toast(e.message)}break;
+  }}
 
 /* ═════ 50 · evenimente, istoric (butonul Înapoi), pornire ═════ */
 let HD=0,HSKIP=0,HPEND=0,HSCHED=false;
@@ -1353,6 +1630,7 @@ document.addEventListener('click',async ev=>{
       $$('.vrow',box).filter(r=>!$('[data-f=param]',r).value.trim()&&!$('[data-f=val]',r).value.trim()).forEach(r=>r.remove());
       ls.forEach(l=>{if(have.indexOf(norm(l.param))>=0)return;box.insertAdjacentHTML('beforeend',rowHtml({param:l.param,val:'',u:l.u,lo:l.lo!=null?nv(l.lo):'',hi:l.hi!=null?nv(l.hi):''}))});
       toast('Am copiat parametrii din '+fd(reps[0].date)+'. Completează valorile.');break}
+    default:if(a.indexOf('sy-')===0)syAct(a,el)
   }});
 
 /* câmpuri care reacționează la schimbare */
@@ -1379,6 +1657,7 @@ document.addEventListener('input',ev=>{if(ev.target.id==='q'){S.f.q=ev.target.va
 document.addEventListener('submit',ev=>{
   const f=ev.target;
   if(f.dataset.form){ev.preventDefault();submitForm(f);return}
+  if(f.dataset.pw){ev.preventDefault();pwSubmit(f);return}
   if(f.dataset.inl){ev.preventDefault();const v=f.elements.v.value.trim();if(!v)return;
     const arr=f.dataset.inl==='spec'?META.specialties:META.visitTypes;if(arr.indexOf(v)<0){arr.push(v);saveMeta()}render(true)}});
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&LAYERS.length)closePanel()});
@@ -1391,6 +1670,8 @@ window.addEventListener('afterprint',()=>document.body.classList.remove('printin
   const q=new URLSearchParams(location.search);
   if(q.get('demo')==='1'&&!DB.persons.length)loadDemo();
   render();
+  if(SY.cfg.cid)loadGis().catch(()=>{});
+  if(syOn()&&tokOk())syncNow(false);
   if('serviceWorker' in navigator&&/^https:|^http:\/\/localhost/.test(location.protocol+'//'+location.host)){navigator.serviceWorker.register('sw.js').catch(()=>{})}
 })();
 

@@ -1,0 +1,1399 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Jurnal medical de familie</title>
+<meta name="theme-color" content="#C23B63">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Jurnal medical">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+
+/* Concept: aplicație mobile-first, un profil per membru; culoarea membrului colorează interfața.
+   Carduri albe pe fundal roz-pal, titluri în Bricolage Grotesque, text în Figtree. */
+:root{
+  --font-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --font-body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --bg:#FBF6F4; --surface:#FFFFFF; --surface2:#F5ECE9; --ink:#2A2230; --muted:#6B6073; --line:#EADFDB;
+  --m0:#C23B63; --m1:#13776C; --m2:#4558B8; --m3:#A8590F; --m4:#7A3FA0; --m5:#2F6E9E; --on-m:#FFFFFF;
+  --ok:#2B7A4B; --warn:#9A5B00; --bad:#B3261E;
+  --shadow:0 1px 2px rgba(42,34,48,.06),0 8px 22px rgba(42,34,48,.06);
+  --scrim:rgba(30,18,34,.45);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#171218; --surface:#221B25; --surface2:#2C232F; --ink:#F4EEF3; --muted:#B5AABB; --line:#3B3140;
+  --m0:#FF8FAB; --m1:#5ED0BF; --m2:#A5B4FF; --m3:#F2B36B; --m4:#D2A6F2; --m5:#8CC4F0; --on-m:#1B1220;
+  --ok:#6FD39A; --warn:#FFC266; --bad:#FF8F86;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.25); --scrim:rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#171218; --surface:#221B25; --surface2:#2C232F; --ink:#F4EEF3; --muted:#B5AABB; --line:#3B3140;
+  --m0:#FF8FAB; --m1:#5ED0BF; --m2:#A5B4FF; --m3:#F2B36B; --m4:#D2A6F2; --m5:#8CC4F0; --on-m:#1B1220;
+  --ok:#6FD39A; --warn:#FFC266; --bad:#FF8F86;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.25); --scrim:rgba(0,0,0,.6); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0;text-align:inherit}
+:focus-visible{outline:2px solid var(--m);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--font-display);font-weight:700;margin:0;letter-spacing:-.01em;text-wrap:balance}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+
+#app{--m:var(--m0);--m-tint:color-mix(in srgb,var(--m) 11%,var(--surface));--m-soft:color-mix(in srgb,var(--m) 22%,var(--surface));
+  max-width:640px;margin:0 auto;min-height:100vh;padding-bottom:110px}
+
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding:10px 0 8px}
+.top-row{display:flex;align-items:center;gap:10px;min-height:40px}
+.brand{font-family:var(--font-display);font-weight:700;font-size:20px;flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.brand .logo{width:28px;height:28px;border-radius:9px;background:var(--m);color:var(--on-m);display:grid;place-items:center}
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--line);padding:5px 10px;border-radius:999px}
+.sync .dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.iconbtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);flex:none}
+.pagetitle{font-size:20px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 16px;border-radius:12px;background:var(--m);color:var(--on-m);font-weight:700;min-height:42px}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.soft{background:var(--m-tint);color:var(--m)}
+.btn.sm{padding:6px 12px;min-height:34px;font-size:13px;border-radius:10px}
+.btn.block{width:100%}
+.members{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.members::-webkit-scrollbar{display:none}
+.mem{display:flex;align-items:center;gap:8px;padding:5px 14px 5px 5px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600;white-space:nowrap;flex:none}
+.mem[aria-pressed="true"]{background:var(--m);color:var(--on-m);border-color:var(--m)}
+.av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-family:var(--font-display);background:var(--mc,var(--m));color:var(--on-m);flex:none;font-size:14px}
+.av.lg{width:64px;height:64px;font-size:28px}
+.av.sm{width:22px;height:22px;font-size:11px}
+.demo{background:color-mix(in srgb,var(--warn) 14%,var(--surface));color:var(--ink);border:1px solid color-mix(in srgb,var(--warn) 35%,var(--line));border-radius:12px;padding:8px 12px;font-size:13px;margin:6px 0 4px;display:flex;gap:8px;align-items:flex-start}
+
+/* blocks */
+main{display:flex;flex-direction:column;gap:14px;padding-top:6px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.card.flat{box-shadow:none}
+.card h2{font-size:18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card h3{font-size:15px;margin-bottom:6px}
+.sub{color:var(--muted);font-size:13px}
+.lbl{font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.hero{display:flex;gap:14px;align-items:center}
+.hero h1{font-size:30px;line-height:1.05}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:var(--surface2);color:var(--ink);white-space:nowrap}
+.chip.m{background:var(--m-tint);color:var(--m)}
+.chip.ok{background:color-mix(in srgb,var(--ok) 14%,var(--surface));color:var(--ok)}
+.chip.warn{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn)}
+.chip.bad{background:color-mix(in srgb,var(--bad) 13%,var(--surface));color:var(--bad)}
+.fchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+.fchips::-webkit-scrollbar{display:none}
+.fc{padding:7px 13px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:13px;white-space:nowrap;flex:none}
+.fc[aria-pressed="true"]{background:var(--m);color:var(--on-m);border-color:var(--m)}
+.qk{display:grid;grid-template-columns:1fr;gap:10px}
+.qk .it{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:baseline;font-size:14px}
+.qk .it b{font-weight:600}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0;box-shadow:var(--shadow)}
+.tile .ti{width:36px;height:36px;border-radius:11px;background:var(--m-tint);color:var(--m);display:grid;place-items:center}
+.tile b{font-family:var(--font-display);font-size:16px}
+.tile .meta{font-size:12.5px;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:12px;align-items:center;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;width:100%;min-width:0}
+.row > .grow{flex:1;min-width:0}
+.row .t{font-weight:600;overflow-wrap:anywhere}
+.row .s{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.datebox{width:48px;flex:none;text-align:center;background:var(--m-tint);color:var(--m);border-radius:12px;padding:6px 0;line-height:1.1}
+.datebox b{display:block;font-family:var(--font-display);font-size:20px}
+.datebox span{font-size:11px;font-weight:700;text-transform:uppercase}
+.ic{flex:none}
+.sep{height:1px;background:var(--line);margin:10px 0}
+.year{font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--muted);margin:8px 0 -2px}
+.empty{padding:26px 16px;text-align:center;color:var(--muted)}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:14px}
+.kv span:nth-child(odd){color:var(--muted)}
+
+/* forms */
+label.f{display:flex;flex-direction:column;gap:5px;font-weight:600;font-size:13px;margin-bottom:12px}
+input[type=text],input[type=date],input[type=time],input[type=file],input[type=search],input[type=password],input[type=number],select,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);min-height:44px;font-weight:400}
+textarea{min-height:90px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--m);outline-offset:1px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;padding:6px 0}
+.chk input{width:20px;height:20px;accent-color:var(--m);margin-top:1px;flex:none}
+.search{position:relative}
+.search input{padding-left:40px}
+.search .ic{position:absolute;left:12px;top:12px;color:var(--muted)}
+.sw{width:46px;height:28px;border-radius:999px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.sw::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.sw[aria-checked="true"]{background:var(--m)}
+.sw[aria-checked="true"]::after{transform:translateX(18px)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--surface2);border-radius:14px;padding:4px;gap:4px}
+.seg button{padding:9px 6px;border-radius:11px;font-weight:700;font-size:13px;text-align:center}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--m);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}
+.setrow .t{font-weight:600}
+
+/* charts */
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-size:10px;font-family:var(--font-body)}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .band{fill:color-mix(in srgb,var(--ok) 13%,transparent)}
+.chart .gband{fill:color-mix(in srgb,var(--m) 11%,transparent)}
+.chart .p50{stroke:var(--muted);stroke-dasharray:4 3;fill:none;stroke-width:1}
+.chart .pe{stroke:var(--muted);fill:none;stroke-width:1;opacity:.6}
+.chart .ln{stroke:var(--m);fill:none;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.chart .pt{fill:var(--m);stroke:var(--surface);stroke-width:2}
+.chart .pt.bad{fill:var(--surface);stroke:var(--bad);stroke-width:2.6}
+.chart .pt.sel{stroke:var(--ink)}
+.chart .hit{fill:transparent;cursor:pointer}
+.chart .flagt{fill:var(--bad);font-weight:700}
+.readout{background:var(--m-tint);border-radius:12px;padding:10px 12px;font-size:14px;margin-top:8px}
+.bar{display:grid;grid-template-columns:110px 1fr 28px;gap:8px;align-items:center;font-size:13px;margin:6px 0}
+.bar .tr{height:10px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.bar .tr i{display:block;height:100%;background:var(--m);border-radius:99px}
+.bar b{text-align:right}
+.ins{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);width:100%}
+.ins .ib{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex:none}
+.ins.ok .ib{background:color-mix(in srgb,var(--ok) 15%,var(--surface));color:var(--ok)}
+.ins.warn .ib{background:color-mix(in srgb,var(--warn) 17%,var(--surface));color:var(--warn)}
+.ins.bad .ib{background:color-mix(in srgb,var(--bad) 14%,var(--surface));color:var(--bad)}
+.ins.info .ib{background:var(--m-tint);color:var(--m)}
+
+/* docs */
+.docs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.doc{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.doc .th{height:92px;background:var(--m-tint);display:grid;place-items:center;color:var(--m);position:relative}
+.doc .th .ft{position:absolute;top:8px;left:8px}
+.doc .tx{padding:10px}
+.doc .tx b{font-size:13.5px;font-weight:600;display:block;overflow-wrap:anywhere}
+.paper{background:#fff;color:#222;border-radius:6px;padding:18px;box-shadow:0 2px 14px rgba(0,0,0,.2);font-size:12px;line-height:1.5}
+.paper h3{font-family:var(--font-display);font-size:17px;color:#222}
+.paper table{width:100%;border-collapse:collapse;margin:6px 0 10px;font-size:11.5px}
+.paper th,.paper td{border-bottom:1px solid #ddd;padding:4px 4px;text-align:left;vertical-align:top}
+.paper h4{margin:12px 0 2px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#555}
+.paper .sk{height:8px;background:#e7e2e6;border-radius:4px;margin:7px 0}
+.paper .foot{margin-top:10px;font-size:10px;color:#777}
+.paperwrap{overflow-x:auto}
+pre.out{background:var(--surface2);border-radius:12px;padding:12px;font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin:0}
+.callout{border-radius:14px;padding:12px 14px;font-size:13.5px;display:flex;gap:10px;align-items:flex-start;background:var(--m-tint)}
+.callout.warn{background:color-mix(in srgb,var(--warn) 14%,var(--surface))}
+.callout.bad{background:color-mix(in srgb,var(--bad) 11%,var(--surface))}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.steps li{display:flex;gap:10px;align-items:center;font-size:14px}
+.steps .s0{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none}
+.steps li.done .s0{border-color:var(--ok);background:var(--ok);display:grid;place-items:center;color:var(--surface)}
+.steps li.run .s0{border-color:var(--m);border-top-color:transparent;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* tabs, sheet, toast */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.tabs-in{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:12px;font-size:11px;font-weight:600;color:var(--muted);text-align:center}
+.tab[aria-current="page"]{color:var(--m);background:var(--m-tint)}
+#sheet{position:fixed;inset:0;z-index:40}
+.scrim{position:absolute;inset:0;background:var(--scrim)}
+.panel{position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:min(640px,100%);max-height:92%;overflow:auto;background:var(--bg);color:var(--ink);
+  border-radius:22px 22px 0 0;padding:16px max(16px,env(safe-area-inset-left,0px)) calc(24px + env(safe-area-inset-bottom,0px));outline:0}
+.panel .ph{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;position:sticky;top:-16px;background:var(--bg);padding:6px 0;z-index:2}
+.panel .ph h2{font-size:20px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;z-index:50;max-width:min(560px,calc(100% - 32px));text-align:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:380px){.tiles{grid-template-columns:1fr}.qk .it{grid-template-columns:1fr;gap:0}.bar{grid-template-columns:90px 1fr 24px}}
+
+#app[data-c="1"]{--m:var(--m1)}#app[data-c="2"]{--m:var(--m2)}#app[data-c="3"]{--m:var(--m3)}#app[data-c="4"]{--m:var(--m4)}#app[data-c="5"]{--m:var(--m5)}
+#app{--m-tint:color-mix(in srgb,var(--m) 11%,var(--surface))}
+/* completări etapa 1 */
+[hidden]{display:none!important}
+.rowbtn{text-align:left}
+.row{text-align:left;cursor:pointer}
+div.row{cursor:default}
+.lnk{color:var(--m);font-weight:600;text-decoration:underline;text-underline-offset:2px;text-align:left}
+.lnkchip{cursor:pointer}
+.ti{width:36px;height:36px;border-radius:11px;background:var(--m-tint);color:var(--m);display:grid;place-items:center;flex:none}
+.tile{text-align:left;cursor:pointer}
+.tile.flat{box-shadow:none;cursor:default;background:var(--surface2);border-color:transparent}
+.tile.flat b{font-size:20px}
+.layer{position:absolute;inset:0}
+.panel.wide{width:min(900px,100%)}
+.pb{min-width:0}
+.fgrid{display:flex;flex-wrap:wrap;gap:12px 10px}
+.f{display:flex;flex-direction:column;gap:5px;font-weight:600;font-size:13px;flex:1 1 100%;min-width:0}
+.f.half{flex:1 1 calc(50% - 5px)}
+.f .sub{font-weight:400}
+.fl{font-weight:600;font-size:13px}
+.full{flex:1 1 100%}
+.selrow{display:flex;gap:8px}
+.selrow select{flex:1;min-width:0}
+.iconbtn.sm{width:44px;height:44px;border-radius:12px}
+.multi{display:flex;flex-wrap:wrap;gap:6px}
+.mi{display:inline-flex}
+.mi input{position:absolute;opacity:0;pointer-events:none}
+.mi span{padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:13px;cursor:pointer}
+.mi input:checked + span{background:var(--m);color:var(--on-m);border-color:var(--m)}
+.mi input:focus-visible + span{outline:2px solid var(--m);outline-offset:2px}
+.vrows{display:flex;flex-direction:column;gap:10px}
+.vrow{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface2)}
+.vrow input{min-height:40px;width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:400}
+.vr2{display:grid;grid-template-columns:1.2fr .8fr .8fr .8fr 40px;gap:6px;align-items:center}
+.vr2 .iconbtn{width:40px;height:40px}
+.rowbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.fbtns{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.danger{color:var(--bad)}
+.btn.danger-solid{background:var(--bad);color:#fff}
+.btn.danger{color:var(--bad)}
+.chx{margin-left:4px;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%}
+.inl{display:flex;gap:8px;margin-top:10px}
+.inl input{flex:1}
+.more summary{cursor:pointer;font-weight:600;color:var(--muted);padding:6px 0}
+.road{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.doc{cursor:pointer;text-align:left}
+.doc .th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.doc .th .ft{z-index:1}
+.paper .anx img{display:block}
+.paper .sk0{font-size:10px;color:#777}
+.demo.bad{background:color-mix(in srgb,var(--bad) 12%,var(--surface))}
+.top-row .btn{flex:none}
+@media (max-width:420px){.vr2{grid-template-columns:1fr 1fr 1fr 1fr 40px}.vr2 input{padding:8px 6px}}
+@media (min-width:900px){body{padding-top:8px}#app{max-width:720px}.tabs-in{max-width:720px}.panel{width:min(720px,100%)}}
+@media print{
+  @page{margin:12mm}
+  body.printing{background:#fff;padding:0}
+  body.printing #app,body.printing #toast,body.printing .scrim,body.printing .ph,body.printing .noprint,body.printing::before{display:none!important}
+  body.printing #sheet{position:static}
+  body.printing .layer{position:static}
+  body.printing .panel{position:static;transform:none;width:100%;max-height:none;overflow:visible;background:#fff;padding:0;border-radius:0}
+  body.printing .paper{box-shadow:none;padding:0}
+  body.printing .paperwrap{overflow:visible}
+}
+.row.up{flex-wrap:wrap}.row.up .grow{flex:1 1 150px}.row.up .btn{flex:1 1 100%}
+
+</style>
+</head>
+<body>
+<div id="app" data-c="0">
+  <header class="top" id="top"></header>
+  <main id="main"></main>
+  <nav class="tabs" aria-label="Navigare principală"><div class="tabs-in" id="tabs"></div></nav>
+  <div id="sheet" hidden></div>
+  <div id="toast" role="status" hidden></div>
+</div>
+<script>
+/* ═════ 00 · nucleu: utilitare, iconițe, baza de date locală ═════ */
+const VERSION='1.0.0';
+const $=(s,r)=>(r||document).querySelector(s);
+const $$=(s,r)=>Array.prototype.slice.call((r||document).querySelectorAll(s));
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const J=o=>esc(JSON.stringify(o));
+const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const uid=()=>{try{return crypto.randomUUID()}catch(e){return 'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,9)}};
+const p2=n=>String(n).padStart(2,'0');
+const MON=['ian.','feb.','mar.','apr.','mai','iun.','iul.','aug.','sept.','oct.','nov.','dec.'];
+const D=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?new Date(+m[1],+m[2]-1,+m[3]):null};
+const toS=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+const todayS=()=>toS(new Date());
+const fd=s=>{const d=D(s);return d?d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear():'—'};
+const fmy=s=>{const d=D(s);return d?MON[d.getMonth()]+" '"+String(d.getFullYear()).slice(2):''};
+const addDays=(s,n)=>{const d=D(s);d.setDate(d.getDate()+n);return toS(d)};
+const addMonths=(s,n)=>{const d=D(s);d.setMonth(d.getMonth()+n);return toS(d)};
+const yrs=(b,on)=>(D(on||todayS())-D(b))/(365.2425*864e5);
+const nf=(v,dec)=>{if(v==null||v===''||isNaN(v))return '—';const k=Math.pow(10,dec==null?1:dec);return String(Math.round(v*k)/k).replace('.',',')};
+const nv=v=>(v==null||isNaN(v))?'—':String(Math.round(v*1000)/1000).replace('.',',');
+const num=s=>{if(s==null)return null;s=String(s).trim().replace(',','.');if(s==='')return null;const v=parseFloat(s);return isNaN(v)?null:v};
+const cmpDateDesc=(a,b)=>(a.date||'')<(b.date||'')?1:(a.date||'')>(b.date||'')?-1:0;
+const cmpDateAsc=(a,b)=>-cmpDateDesc(a,b);
+const cmpName=(a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ro');
+const clone=o=>JSON.parse(JSON.stringify(o));
+function ageText(p){
+  if(!p||!p.born)return '';const b=D(p.born),t=new Date();let y=t.getFullYear()-b.getFullYear(),mo=t.getMonth()-b.getMonth();
+  if(t.getDate()<b.getDate())mo--;if(mo<0){y--;mo+=12}
+  const ys=y===1?'1 an':(y<20?y+' ani':y+' de ani');
+  return y<18&&mo?ys+' și '+mo+(mo===1?' lună':' luni'):ys}
+const isChild=p=>!!(p&&p.born&&yrs(p.born)<18);
+const flag=(v,lo,hi)=>v==null?null:(lo!=null&&v<lo?'low':hi!=null&&v>hi?'high':null);
+const refText=(lo,hi)=>lo!=null&&hi!=null?nv(lo)+'–'+nv(hi):lo!=null?'≥ '+nv(lo):hi!=null?'< '+nv(hi):'';
+const money=(v)=>(v==null||v==='')?'—':new Intl.NumberFormat('ro-RO',{maximumFractionDigits:2}).format(v)+' '+(META.currency||'RON');
+
+const P={
+home:'<path d="M3 11l9-8 9 8"/><path d="M5 9.5V20h14V9.5"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+chart:'<path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 15l4-5 3 3 5-7"/>',share:'<path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v8h14v-8"/>',
+sliders:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',plus:'<path d="M12 5v14M5 12h14"/>',back:'<path d="M15 5l-7 7 7 7"/>',
+cross:'<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>',syringe:'<path d="M18 2l4 4M15 5l4 4M9 11l6-6 4 4-6 6zM9 11l-4 4v3h3l4-4M5 19l-3 3"/>',
+flask:'<path d="M9 3h6M10 3v6l-5 9a2 2 0 002 3h10a2 2 0 002-3l-5-9V3"/>',file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
+ruler:'<path d="M3 17L17 3l4 4L7 21z"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2"/>',note:'<path d="M5 4h14v12l-4 4H5z"/><path d="M15 20v-4h4"/>',
+user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.2"/>',
+bell:'<path d="M6 16v-5a6 6 0 1112 0v5l2 2H4z"/><path d="M10 21h4"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',cloud:'<path d="M7 18a4 4 0 01-.5-8 5.5 5.5 0 0110.6-1A4.5 4.5 0 0117 18z"/>',
+check:'<path d="M5 12l5 5 9-10"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',chev:'<path d="M9 5l7 7-7 7"/>',
+spark:'<path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/><path d="M19 17l.7 1.8 1.8.7-1.8.7L19 22l-.7-1.8-1.8-.7 1.8-.7z"/>',
+copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/>',star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+clip:'<path d="M20 11l-8 8a5 5 0 01-7-7l9-9a3.5 3.5 0 015 5l-9 9a2 2 0 01-3-3l8-8"/>',alert:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',
+img:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 17l-5-5-9 8"/>',pdf:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 14h6M9 17h6"/>',
+info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/>',dl:'<path d="M12 4v11"/><path d="M8 11l4 4 4-4"/><path d="M5 20h14"/>',
+pill:'<path d="M10.5 20.5a5 5 0 01-7-7l9-9a5 5 0 017 7z"/><path d="M8.5 8.5l7 7"/>',heart:'<path d="M12 20s-7-4.5-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.5-9 9-9 9z"/>',
+pulse:'<path d="M3 12h4l2-6 4 12 2-6h6"/>',building:'<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M10 21v-4h4v4"/>',
+wallet:'<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',link:'<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/>',
+stetho:'<path d="M6 3v6a4 4 0 008 0V3"/><path d="M10 13v2a5 5 0 0010 0v-1"/><circle cx="20" cy="12" r="2"/>',
+layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',upload:'<path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M5 20h14"/>'
+};
+const ic=(n,s)=>`<svg class="ic" width="${s||20}" height="${s||20}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||''}</svg>`;
+
+/* ───── liste implicite ───── */
+const DEF_SPECS=['Medicină de familie','Pediatrie','Cardiologie','Endocrinologie','Gastroenterologie','Alergologie și imunologie','Dermatologie','Ortopedie','Neurologie','Psihiatrie','Psihologie','ORL','Oftalmologie','Stomatologie','Ginecologie','Urologie','Nefrologie','Pneumologie','Reumatologie','Hematologie','Oncologie','Chirurgie generală','Radiologie și imagistică','Recuperare medicală','Nutriție și dietetică','Medicina muncii','Altele'];
+const DEF_TYPES=['Consultație','Control','Ecografie','Analize','Radiografie','RMN','CT','EKG','Vaccin','Tratament / procedură','Telemedicină','Alte investigații'];
+const FACILITY_KINDS=['Clinică privată','Cabinet','Spital','Laborator','Farmacie','Centru de imagistică','Altceva'];
+const DOC_TAGS=['Analize','Imagistică','Rețetă','Bilet de ieșire','Scrisoare medicală','Vaccinuri','Factură','Alt document'];
+
+/* ───── baza de date locală (IndexedDB) ───── */
+const DATA=['persons','facilities','doctors','conditions','visits','symptoms','labreports','labs','meds','vaccines','measures','docs','notes','reminders'];
+const STORES=DATA.concat(['meta','blobs']);
+const DB={};DATA.forEach(s=>DB[s]=[]);
+let META={id:'meta',specialties:DEF_SPECS.slice(),visitTypes:DEF_TYPES.slice(),currency:'RON',genericCal:true,tomb:[],created:Date.now()};
+let idb=null,dbError='',persisted=false;
+function openDB(){return new Promise(res=>{try{
+  const r=indexedDB.open('jurnal-medical',1);
+  r.onupgradeneeded=()=>{STORES.forEach(s=>{if(!r.result.objectStoreNames.contains(s))r.result.createObjectStore(s,{keyPath:'id'})})};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);r.onblocked=()=>res(null)}catch(e){res(null)}})}
+const idbStore=(s,m)=>idb.transaction(s,m).objectStore(s);
+function idbAll(s){return new Promise(res=>{try{const q=idbStore(s,'readonly').getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>res([])}catch(e){res([])}})}
+function idbWrite(s,fn){if(!idb)return;try{const t=idb.transaction(s,'readwrite');fn(t.objectStore(s));t.onerror=()=>{dbError='Salvarea locală a eșuat.'};t.onabort=()=>{dbError='Salvarea locală a eșuat (spațiu insuficient?).'}}catch(e){dbError='Salvarea locală a eșuat.'}}
+async function loadAll(){
+  idb=await openDB();if(!idb){dbError='Browserul nu permite salvarea locală. Datele se pierd la închidere.';return}
+  for(const s of DATA)DB[s]=await idbAll(s);
+  const m=await idbAll('meta');if(m.length){META=Object.assign(META,m[0]);if(!META.tomb)META.tomb=[]}
+  try{if(navigator.storage&&navigator.storage.persist)persisted=await navigator.storage.persist()}catch(e){}
+}
+function save(type,rec){rec.updatedAt=Date.now();if(!rec.id)rec.id=uid();const a=DB[type],i=a.findIndex(x=>x.id===rec.id);if(i>=0)a[i]=rec;else a.push(rec);idbWrite(type,s=>s.put(rec));return rec}
+function removeRec(type,id){const a=DB[type],i=a.findIndex(x=>x.id===id);if(i>=0)a.splice(i,1);idbWrite(type,s=>s.delete(id));META.tomb.push({t:type,id:id,at:Date.now()});saveMeta()}
+function saveMeta(){META.updatedAt=Date.now();idbWrite('meta',s=>s.put(META))}
+function putBlob(id,blob){idbWrite('blobs',s=>s.put({id:id,blob:blob,type:blob.type,size:blob.size}))}
+function getBlob(id){return new Promise(res=>{if(!idb)return res(null);try{const q=idbStore('blobs','readonly').get(id);q.onsuccess=()=>res(q.result?q.result.blob:null);q.onerror=()=>res(null)}catch(e){res(null)}})}
+function delBlob(id){idbWrite('blobs',s=>s.delete(id))}
+async function wipeAll(){
+  DATA.forEach(s=>DB[s]=[]);META=Object.assign(META,{specialties:DEF_SPECS.slice(),visitTypes:DEF_TYPES.slice(),tomb:[]});
+  if(idb){for(const s of STORES.filter(x=>x!=='meta')){await new Promise(r=>{try{const t=idb.transaction(s,'readwrite');t.objectStore(s).clear();t.oncomplete=r;t.onerror=r;t.onabort=r}catch(e){r()}})}}
+  saveMeta()}
+const blobToB64=b=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]||'');r.onerror=()=>res('');r.readAsDataURL(b)});
+const b64ToBlob=(b64,type)=>{const bin=atob(b64),a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:type||'application/octet-stream'})};
+async function exportAll(){
+  const out={app:'jurnal-medical',version:1,exported:new Date().toISOString(),meta:META,data:{},blobs:[]};
+  DATA.forEach(s=>out.data[s]=DB[s]);
+  for(const d of DB.docs){const b=await getBlob(d.id);if(b)out.blobs.push({id:d.id,type:b.type,b64:await blobToB64(b)})}
+  return new Blob([JSON.stringify(out)],{type:'application/json'});
+}
+async function importAll(text){
+  const o=JSON.parse(text);if(o.app!=='jurnal-medical'||!o.data)throw new Error('Fișier necunoscut.');
+  await wipeAll();META=Object.assign(META,o.meta||{});if(!META.tomb)META.tomb=[];saveMeta();
+  for(const s of DATA){DB[s]=(o.data[s]||[]);DB[s].forEach(r=>idbWrite(s,st=>st.put(r)))}
+  for(const b of (o.blobs||[]))putBlob(b.id,b64ToBlob(b.b64,b.type));
+}
+
+/* ═════ 10 · stare, interogări, relații, date de exemplu ═════ */
+const S={tab:'profil',nav:[],pid:null,f:{q:'',type:'all',spec:'all',doc:'all',cond:'all',period:'all',fam:false},sel:{},docf:'Toate',gr:'h',costFam:false,
+  lf:{show:'all'},
+  ex:{seg:'pdf',sec:{fisa:true,afectiuni:true,medicamente:true,vizite:true,analize:true,vaccin:true,crestere:true,simptome:false,note:false,docs:false},period:'3y',spec:'all',anon:true,fmt:'md',preset:'trend'}};
+const COLL={person:'persons',doctor:'doctors',facility:'facilities',condition:'conditions',visit:'visits',symptom:'symptoms',labreport:'labreports',med:'meds',vax:'vaccines',measure:'measures',doc:'docs',note:'notes',reminder:'reminders'};
+const get=(t,id)=>id?(DB[t].find(x=>x.id===id)||null):null;
+const person=()=>get('persons',S.pid);
+const mine=(t,pid)=>DB[t].filter(x=>x.personId===(pid||S.pid));
+const dname=id=>{const d=get('doctors',id);return d?d.name:''};
+const fname=id=>{const f=get('facilities',id);return f?f.name:''};
+const cname=id=>{const c=get('conditions',id);return c?c.name:''};
+const condActive=c=>!c.end||c.end>=todayS();
+const medActive=m=>(!m.end||m.end>=todayS())&&(!m.start||m.start<=todayS());
+const vlabel=v=>fd(v.date)+' · '+(v.reason||(v.types||[]).join(', ')||'Vizită');
+const memberColor=p=>(p&&p.color!=null?p.color:0)%6;
+
+/* specialitățile unui element (propriu sau prin legături) */
+function specsOf(type,x){
+  const s=new Set(),add=n=>{if(n)s.add(n)};
+  if(type==='condition'){add(x.specialty);return s}
+  if(type==='visit'){add(x.specialty);if(!x.specialty&&x.doctorId){const d=get('doctors',x.doctorId);if(d&&d.specialties&&d.specialties.length===1)add(d.specialties[0])}return s}
+  add(x.specialty);
+  (x.conditionIds||[]).forEach(id=>{const c=get('conditions',id);if(c)add(c.specialty)});
+  if(x.visitId){const v=get('visits',x.visitId);if(v)specsOf('visit',v).forEach(add)}
+  return s}
+const inSpec=(type,x,sp)=>specsOf(type,x).has(sp);
+function specData(pid,sp){
+  const r={conditions:[],visits:[],reports:[],symptoms:[],meds:[],docs:[],notes:[]};
+  r.conditions=mine('conditions',pid).filter(x=>inSpec('condition',x,sp)).sort((a,b)=>(a.end?1:0)-(b.end?1:0));
+  r.visits=mine('visits',pid).filter(x=>inSpec('visit',x,sp)).sort(cmpDateDesc);
+  r.reports=mine('labreports',pid).filter(x=>inSpec('report',x,sp)).sort(cmpDateDesc);
+  r.symptoms=mine('symptoms',pid).filter(x=>inSpec('symptom',x,sp)).sort((a,b)=>(b.start||'')<(a.start||'')?-1:1);
+  r.meds=mine('meds',pid).filter(x=>inSpec('med',x,sp)).sort((a,b)=>(b.start||'')<(a.start||'')?-1:1);
+  r.docs=mine('docs',pid).filter(x=>inSpec('doc',x,sp)).sort(cmpDateDesc);
+  r.notes=mine('notes',pid).filter(x=>inSpec('note',x,sp)).sort(cmpDateDesc);
+  r.doctors=DB.doctors.filter(d=>(d.specialties||[]).includes(sp)||r.visits.some(v=>v.doctorId===d.id)).sort(cmpName);
+  const fs=new Set();r.visits.forEach(v=>v.facilityId&&fs.add(v.facilityId));r.reports.forEach(v=>v.facilityId&&fs.add(v.facilityId));
+  r.facilities=Array.from(fs).map(id=>get('facilities',id)).filter(Boolean);
+  r.cost=r.visits.filter(v=>v.status==='efectuată'&&v.cost!=null).reduce((a,v)=>a+v.cost,0);
+  r.total=r.conditions.length+r.visits.length+r.reports.length+r.symptoms.length+r.meds.length+r.docs.length+r.notes.length;
+  return r}
+function usedSpecs(pid){const s=new Set();
+  mine('conditions',pid).forEach(x=>specsOf('condition',x).forEach(n=>s.add(n)));mine('visits',pid).forEach(x=>specsOf('visit',x).forEach(n=>s.add(n)));
+  mine('labreports',pid).forEach(x=>specsOf('report',x).forEach(n=>s.add(n)));mine('meds',pid).forEach(x=>specsOf('med',x).forEach(n=>s.add(n)));
+  mine('symptoms',pid).forEach(x=>specsOf('symptom',x).forEach(n=>s.add(n)));return s}
+
+/* analize */
+const labsOf=pid=>DB.labs.filter(l=>l.personId===pid);
+const paramsOf=pid=>Array.from(new Set(labsOf(pid).filter(l=>l.v!=null).map(l=>l.param))).sort((a,b)=>a.localeCompare(b,'ro'));
+const seriesOf=(pid,n)=>labsOf(pid).filter(l=>l.param===n&&l.v!=null).sort(cmpDateAsc).map(l=>({d:l.date,date:l.date,v:l.v,u:l.u,lo:l.lo,hi:l.hi,id:l.id}));
+const allParams=()=>Array.from(new Set(DB.labs.map(l=>l.param))).sort((a,b)=>a.localeCompare(b,'ro'));
+const lastLab=n=>DB.labs.filter(l=>l.param===n).sort(cmpDateDesc)[0]||null;
+const flaggedNow=pid=>paramsOf(pid).map(n=>{const s=seriesOf(pid,n),l=s[s.length-1];return flag(l.v,l.lo,l.hi)?{n,l}:null}).filter(Boolean);
+const reportLabs=id=>DB.labs.filter(l=>l.reportId===id);
+
+/* ștergere cu curățarea legăturilor */
+function cascade(type,id){
+  const strip=(c,k)=>DB[c].slice().forEach(r=>{if(Array.isArray(r[k])&&r[k].indexOf(id)>=0){r[k]=r[k].filter(x=>x!==id);save(c,r)}});
+  const unset=(c,k)=>DB[c].slice().forEach(r=>{if(r[k]===id){r[k]=null;save(c,r)}});
+  if(type==='condition')['visits','symptoms','labreports','meds','notes','docs'].forEach(c=>strip(c,'conditionIds'));
+  if(type==='visit'){['symptoms','labreports','meds','docs','vaccines','notes'].forEach(c=>unset(c,'visitId'));DB.reminders.filter(r=>r.refType==='visit'&&r.refId===id).forEach(r=>removeRec('reminders',r.id))}
+  if(type==='doctor'){unset('visits','doctorId');unset('persons','gpId')}
+  if(type==='facility'){unset('visits','facilityId');unset('labreports','facilityId');strip('doctors','facilityIds')}
+  if(type==='labreport'){DB.labs.filter(l=>l.reportId===id).forEach(l=>removeRec('labs',l.id));unset('docs','reportId')}
+  if(type==='doc')delBlob(id);
+  if(type==='person'){DATA.filter(c=>c!=='persons').forEach(c=>DB[c].filter(r=>r.personId===id).forEach(r=>{if(c==='docs')delBlob(r.id);removeRec(c,r.id)}))}
+}
+function delEntity(type,id){cascade(type,id);removeRec(COLL[type],id)}
+
+/* remindere */
+function syncVisitReminder(v){
+  const ex=DB.reminders.find(r=>r.refType==='visit'&&r.refId===v.id);
+  if(v.next&&v.status!=='anulată'){const r=ex||{personId:v.personId,refType:'visit',refId:v.id,cal:false};r.date=v.next;r.title='Control – '+(v.reason||('vizita din '+fd(v.date)));r.kind='Control';save('reminders',r)}
+  else if(ex)removeRec('reminders',ex.id)}
+function upcoming(pid){
+  const t=todayS(),out=[];
+  DB.visits.filter(v=>v.personId===pid&&v.status==='planificată'&&v.date>=t).forEach(v=>out.push({date:v.date,time:v.time,title:v.reason||(v.types||[]).join(', ')||'Vizită planificată',sub:[v.time,dname(v.doctorId),fname(v.facilityId)].filter(Boolean).join(' · '),kind:'Vizită',go:{t:'visit',id:v.id},cal:!!v.cal,ct:'visit',cid:v.id}));
+  DB.reminders.filter(r=>r.personId===pid&&r.date>=t).forEach(r=>out.push({date:r.date,title:r.title,sub:r.kind,kind:r.kind,go:r.refType==='visit'?{t:'visit',id:r.refId}:{sheet:'reminder',id:r.id},cal:!!r.cal,ct:'reminder',cid:r.id}));
+  DB.vaccines.filter(v=>v.personId===pid&&v.status==='programat'&&v.date&&v.date>=t).forEach(v=>out.push({date:v.date,title:'Vaccin: '+v.name,sub:'Vaccin',kind:'Vaccin',go:{sheet:'vax',id:v.id},cal:!!v.cal,ct:'vax',cid:v.id}));
+  return out.sort(cmpDateAsc)}
+function calUrl(kind,title,dateS,timeS,pname,notes){
+  const text=META.genericCal?(kind||'Medical')+' – '+pname:title;let dates;
+  if(timeS){const d=D(dateS),h=timeS.split(':');d.setHours(+h[0],+(h[1]||0));const e=new Date(d.getTime()+45*60000);
+    const f=x=>x.getFullYear()+p2(x.getMonth()+1)+p2(x.getDate())+'T'+p2(x.getHours())+p2(x.getMinutes())+'00';dates=f(d)+'/'+f(e)}
+  else dates=dateS.replace(/-/g,'')+'/'+addDays(dateS,1).replace(/-/g,'');
+  let tz='';try{tz='&ctz='+encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)}catch(e){}
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(text)+'&dates='+dates+tz+'&details='+encodeURIComponent(META.genericCal?'Jurnal medical':(notes||'Jurnal medical'))}
+
+/* costuri */
+function costStats(pids){
+  const vs=DB.visits.filter(v=>pids.indexOf(v.personId)>=0&&v.cost!=null);
+  const done=vs.filter(v=>v.status==='efectuată'),plan=vs.filter(v=>v.status==='planificată');
+  const sum=a=>a.reduce((s,v)=>s+v.cost,0),byYear={},bySpec={},byType={};
+  done.forEach(v=>{const y=(v.date||'').slice(0,4);byYear[y]=(byYear[y]||0)+v.cost;
+    const sp=Array.from(specsOf('visit',v))[0]||'Fără specialitate';bySpec[sp]=(bySpec[sp]||0)+v.cost;
+    const ty=(v.types&&v.types.length?v.types:['Fără tip']);ty.forEach(t=>{byType[t]=(byType[t]||0)+v.cost/ty.length})});
+  return {total:sum(done),planned:sum(plan),byYear,bySpec,byType,done:done.sort(cmpDateDesc),plan}}
+
+/* cronologie unificată */
+function events(pids){
+  const ev=[],add=e=>{e.specs=e.specs||[];ev.push(e)};
+  pids.forEach(pid=>{
+    DB.visits.filter(v=>v.personId===pid).forEach(v=>add({pid,date:v.date,type:'vizite',title:v.reason||(v.types||[]).join(', ')||'Vizită',sub:[v.status==='planificată'?'Planificată':v.status==='anulată'?'Anulată':'',dname(v.doctorId),fname(v.facilityId)].filter(Boolean).join(' · '),specs:Array.from(specsOf('visit',v)),doctorId:v.doctorId,conditionIds:v.conditionIds||[],text:[v.diagnosis,v.treatment,v.notes,(v.types||[]).join(' ')].join(' '),go:{t:'visit',id:v.id}}));
+    DB.labreports.filter(r=>r.personId===pid).forEach(r=>{const ls=reportLabs(r.id),fl=ls.filter(l=>flag(l.v,l.lo,l.hi)).length;
+      add({pid,date:r.date,type:'analize',title:'Analize de laborator',sub:ls.length+' parametri'+(fl?' · '+fl+' în afara intervalului':'')+(r.facilityId?' · '+fname(r.facilityId):''),specs:Array.from(specsOf('report',r)),conditionIds:r.conditionIds||[],text:ls.map(l=>l.param).join(' ')+' '+(r.notes||''),go:{t:'labreport',id:r.id}})});
+    DB.conditions.filter(c=>c.personId===pid).forEach(c=>{if(c.start)add({pid,date:c.start,type:'afectiuni',title:'Debut: '+c.name,sub:c.specialty||'',specs:[c.specialty].filter(Boolean),conditionIds:[c.id],text:c.notes||'',go:{t:'condition',id:c.id}});
+      if(c.end)add({pid,date:c.end,type:'afectiuni',title:'Încheiată: '+c.name,sub:c.specialty||'',specs:[c.specialty].filter(Boolean),conditionIds:[c.id],text:'',go:{t:'condition',id:c.id}})});
+    DB.symptoms.filter(s=>s.personId===pid&&s.start).forEach(s=>add({pid,date:s.start,type:'simptome',title:s.name,sub:'Simptom'+(s.end?' · până la '+fd(s.end):' · în curs'),specs:Array.from(specsOf('symptom',s)),conditionIds:s.conditionIds||[],text:s.notes||'',go:{sheet:'symptom',id:s.id}}));
+    DB.meds.filter(m=>m.personId===pid&&m.start).forEach(m=>add({pid,date:m.start,type:'medicamente',title:m.name,sub:[m.dose,m.frequency].filter(Boolean).join(' · ')||'Medicament',specs:Array.from(specsOf('med',m)),conditionIds:m.conditionIds||[],text:(m.description||'')+' '+(m.notes||''),go:{sheet:'med',id:m.id}}));
+    DB.vaccines.filter(v=>v.personId===pid&&v.status==='efectuat'&&v.date).forEach(v=>add({pid,date:v.date,type:'vaccinuri',title:v.name,sub:'Vaccin efectuat',specs:['Vaccinuri'],conditionIds:[],text:v.note||'',go:{sheet:'vax',id:v.id}}));
+    DB.measures.filter(m=>m.personId===pid).forEach(m=>add({pid,date:m.date,type:'masuratori',title:'Măsurători',sub:[m.height!=null?nf(m.height)+' cm':'',m.weight!=null?nf(m.weight)+' kg':'',m.pulse!=null?'puls '+m.pulse:'',m.sys!=null?'TA '+m.sys+'/'+m.dia:''].filter(Boolean).join(' · '),specs:[],conditionIds:[],text:m.note||'',go:{sheet:'measure',id:m.id}}));
+    DB.docs.filter(d=>d.personId===pid).forEach(d=>add({pid,date:d.date,type:'documente',title:d.name,sub:'Document · '+(d.tag||''),specs:Array.from(specsOf('doc',d)),conditionIds:d.conditionIds||[],text:d.tag||'',go:{doc:d.id}}));
+    DB.notes.filter(n=>n.personId===pid).forEach(n=>add({pid,date:n.date,type:'note',title:n.title,sub:(n.text||'').slice(0,70)+((n.text||'').length>70?'…':''),specs:Array.from(specsOf('note',n)),conditionIds:n.conditionIds||[],text:n.text||'',go:{note:n.id}}));
+  });
+  return ev.sort(cmpDateDesc)}
+const EV_TYPES={vizite:['Vizite','cross'],analize:['Analize','flask'],afectiuni:['Afecțiuni','heart'],simptome:['Simptome','pulse'],medicamente:['Medicamente','pill'],vaccinuri:['Vaccinuri','syringe'],masuratori:['Măsurători','ruler'],documente:['Documente','file'],note:['Note','note']};
+
+/* observații automate */
+function insights(pid){
+  const out=[],p=get('persons',pid);
+  paramsOf(pid).forEach(n=>{const s=seriesOf(pid,n),l=s[s.length-1],pr=s[s.length-2],f=flag(l.v,l.lo,l.hi);
+    if(f)out.push({k:'bad',t:`${n}: ${nv(l.v)} ${l.u}, ${f==='low'?'sub':'peste'} limita ${nv(f==='low'?l.lo:l.hi)} de pe buletin (${fd(l.d)}).`,go:{t:'param',n}});
+    else if(pr&&flag(pr.v,pr.lo,pr.hi))out.push({k:'ok',t:`${n}: a revenit în interval, ${nv(l.v)} ${l.u} față de ${nv(pr.v)} la ${fd(pr.d)}.`,go:{t:'param',n}});
+    if(s.length>=4){const a=s.slice(-4).map(x=>x.v),dn=a.every((v,i)=>i===0||v<a[i-1]),up=a.every((v,i)=>i===0||v>a[i-1]);
+      if(dn)out.push({k:'warn',t:`${n}: tendință descrescătoare în ultimele 4 analize (${a.map(nv).join(' → ')} ${l.u}).`,go:{t:'param',n}});
+      if(up)out.push({k:'info',t:`${n}: tendință crescătoare în ultimele 4 analize (${a.map(nv).join(' → ')} ${l.u}).`,go:{t:'param',n}})}});
+  DB.vaccines.filter(v=>v.personId===pid&&v.status==='restant').forEach(v=>out.push({k:'warn',t:`Vaccin restant: ${v.name}${v.age?' (recomandat la '+v.age+')':''}.`,go:{t:'vaccinuri'}}));
+  const t=todayS(),soon=upcoming(pid).filter(u=>u.date<=addDays(t,30)).slice(0,2);
+  soon.forEach(u=>out.push({k:'info',t:`În curând: ${u.title}, ${fd(u.date)}.`,go:u.go}));
+  const act=mine('conditions',pid).filter(condActive).length,am=mine('meds',pid).filter(medActive).length;
+  if(act||am)out.push({k:'info',t:`${act} afecțiuni active și ${am} medicamente în curs.`,go:{t:'conditions'}});
+  const g=mine('measures',pid).filter(m=>m.height!=null&&m.weight!=null).sort(cmpDateAsc);
+  if(g.length>2&&isChild(p)){const L=g[g.length-1],t0=+D(L.date)-365*864e5,P0=g.reduce((a,b)=>Math.abs(+D(b.date)-t0)<Math.abs(+D(a.date)-t0)?b:a),dt=(+D(L.date)-+D(P0.date))/(365*864e5);
+    if(dt>0.5)out.push({k:'info',t:`Creștere de ${nf((L.height-P0.height)/dt)} cm pe an în ultima perioadă.`,go:{t:'growth'}})}
+  return out}
+
+/* ═════ date de exemplu ═════ */
+function svgDoc(title,lines){
+  const rows=lines.map((l,i)=>`<text x="30" y="${120+i*26}" font-size="16" fill="#333" font-family="sans-serif">${esc(l)}</text>`).join('');
+  return new Blob([`<svg xmlns="http://www.w3.org/2000/svg" width="420" height="520" viewBox="0 0 420 520"><rect width="420" height="520" fill="#fff"/><rect x="0" y="0" width="420" height="70" fill="#E9D6DD"/><text x="30" y="44" font-size="22" font-weight="700" fill="#4a2a38" font-family="sans-serif">${esc(title)}</text>${rows}<text x="30" y="490" font-size="12" fill="#888" font-family="sans-serif">Document de exemplu</text></svg>`],{type:'image/svg+xml'})}
+function loadDemo(){
+  const t=todayS(),R=n=>addDays(t,n),sv=(ty,r)=>save(ty,r);
+  const P=(name,born,sex,rel,color,x)=>sv('persons',Object.assign({name,born,sex,rel,color,blood:'',allergies:[],notes:'Date de exemplu'},x||{}));
+  const il=P('Ilinca','2018-03-14','F','Fiica',0,{blood:'A (II) Rh pozitiv',allergies:['Polen de mesteacăn (ușoară)']});
+  const co=P('Corina','1988-06-02','F','Soția',1,{blood:'0 (I) Rh pozitiv',allergies:['Penicilină (erupție cutanată)']});
+  const mi=P('Mihai','1985-09-20','M','Tu',2,{blood:'B (III) Rh pozitiv'});
+  const Fa=(name,kind,city,phone)=>sv('facilities',{name,kind,city,phone,address:'',notes:''});
+  const fF=Fa('Cabinet Dumitrescu','Cabinet','București','0700 000 101'),fP=Fa('Clinica Copilul Sănătos','Clinică privată','București','0700 000 102'),
+    fA=Fa('Centrul Alergo Plus','Clinică privată','București','0700 000 103'),fO=Fa('Cabinet Oftalmologic Vasile','Cabinet','București','0700 000 104'),
+    fS=Fa('Cabinet Zâmbet','Cabinet','București','0700 000 105'),fL=Fa('Laborator Medis Clinic','Laborator','București','0700 000 108'),
+    fC=Fa('Centrul Cardio Plus','Clinică privată','București','0700 000 109'),fG=Fa('Spitalul Municipal (exemplu)','Spital','București','0700 000 110');
+  const Dr=(name,specialties,facilityIds,phone)=>sv('doctors',{name,specialties,facilityIds,phone,notes:''});
+  const dF=Dr('Dr. Elena Dumitrescu',['Medicină de familie'],[fF.id],'0700 000 101'),dP=Dr('Dr. Radu Popescu',['Pediatrie'],[fP.id],'0700 000 102'),
+    dA=Dr('Dr. Ioana Marinescu',['Alergologie și imunologie'],[fA.id],'0700 000 103'),dO=Dr('Dr. Cătălin Vasile',['Oftalmologie'],[fO.id],'0700 000 104'),
+    dS=Dr('Dr. Sorina Nistor',['Stomatologie'],[fS.id],'0700 000 105'),dF2=Dr('Dr. Paul Ionescu',['Medicină de familie'],[],'0700 000 106'),
+    dC=Dr('Dr. Andrei Radu',['Cardiologie'],[fC.id],'0700 000 111'),dE=Dr('Dr. Maria Tudor',['Endocrinologie'],[fC.id],'0700 000 107'),
+    dG=Dr('Dr. Victor Stan',['Gastroenterologie'],[fG.id],'0700 000 112');
+  il.gpId=dF.id;sv('persons',il);co.gpId=dF.id;sv('persons',co);mi.gpId=dF2.id;sv('persons',mi);
+  const C=(p,name,specialty,start,end,chronic,notes)=>sv('conditions',{personId:p.id,name,specialty,start,end:end||null,chronic:!!chronic,notes:notes||''});
+  const cRin=C(il,'Rinită alergică sezonieră','Alergologie și imunologie','2023-04-10',null,true,'Se manifestă toamna și primăvara.'),
+    cCar=C(il,'Carie dentară','Stomatologie','2026-08-20','2026-09-05',false),
+    cFier=C(il,'Deficit de fier','Medicină de familie','2025-11-05',null,false,'Urmărire la 6 luni.'),
+    cHta=C(co,'Hipertensiune arterială ușoară','Cardiologie','2025-02-10',null,true),
+    cTir=C(co,'Nodul tiroidian (în observație)','Endocrinologie','2025-09-01',null,false),
+    cGas=C(mi,'Gastrită','Gastroenterologie','2026-01-15','2026-04-20',false);
+  const V=(p,o)=>{const v=sv('visits',Object.assign({personId:p.id,status:'efectuată',types:['Consultație'],conditionIds:[],cost:null,notes:'',diagnosis:'',treatment:'',next:null,cal:false},o));syncVisitReminder(v);return v};
+  const vAl=V(il,{date:R(-15),doctorId:dA.id,facilityId:fA.id,specialty:'Alergologie și imunologie',types:['Control','Consultație'],reason:'Control rinită alergică',diagnosis:'Rinită alergică sezonieră, evoluție bună',treatment:'Tratament local doar la nevoie, în sezon',notes:'Control în primăvară, înaintea sezonului de polen.',cost:250,conditionIds:[cRin.id],next:R(135),cal:true});
+  const vSt=V(il,{date:R(-55),doctorId:dS.id,facilityId:fS.id,specialty:'Stomatologie',types:['Consultație','Tratament / procedură'],reason:'Control stomatologic',diagnosis:'Carie superficială',treatment:'Obturație efectuată',notes:'Control la 6 luni.',cost:420,conditionIds:[cCar.id],next:R(125)});
+  V(il,{date:R(-130),doctorId:dO.id,facilityId:fO.id,specialty:'Oftalmologie',types:['Control'],reason:'Control oftalmologic anual',diagnosis:'Fără modificări',notes:'Acuitate vizuală normală.',cost:200,next:R(235)});
+  V(il,{date:R(-260),doctorId:dP.id,facilityId:fP.id,specialty:'Pediatrie',types:['Consultație'],reason:'Infecție respiratorie acută',diagnosis:'Infecție respiratorie acută',treatment:'Repaus și hidratare',cost:220});
+  const vFam=V(il,{date:R(-360),doctorId:dF.id,facilityId:fF.id,specialty:'Medicină de familie',types:['Control','Analize'],reason:'Control periodic și analize de rutină',diagnosis:'Deficit de fier',treatment:'Supliment de fier și reevaluare',cost:0,conditionIds:[cFier.id]});
+  V(il,{date:R(-500),doctorId:dP.id,facilityId:fP.id,specialty:'Pediatrie',types:['Consultație','Ecografie'],reason:'Dureri abdominale recurente',diagnosis:'Ecografie abdominală fără modificări',cost:380});
+  V(il,{date:R(14),time:'17:30',status:'planificată',doctorId:dF.id,facilityId:fF.id,specialty:'Medicină de familie',types:['Vaccin'],reason:'Vaccin gripă sezonieră',cost:90});
+  V(il,{date:R(40),time:'10:00',status:'planificată',doctorId:dP.id,facilityId:fP.id,specialty:'Pediatrie',types:['Control'],reason:'Control după analize',cost:220,conditionIds:[cFier.id]});
+  const vCa=V(co,{date:R(-70),doctorId:dC.id,facilityId:fC.id,specialty:'Cardiologie',types:['Consultație','EKG','Ecografie'],reason:'Control cardiologic',diagnosis:'Hipertensiune arterială ușoară, valori controlate',treatment:'Tratament continuat, control la 6 luni',cost:620,conditionIds:[cHta.id],next:R(110)});
+  V(co,{date:R(-250),doctorId:dE.id,facilityId:fC.id,specialty:'Endocrinologie',types:['Consultație','Ecografie'],reason:'Evaluare tiroidă',diagnosis:'Nodul tiroidian mic, în observație',cost:450,conditionIds:[cTir.id],next:R(115)});
+  V(co,{date:R(-80),doctorId:dF.id,facilityId:fF.id,specialty:'Medicină de familie',types:['Control','Analize'],reason:'Control anual',cost:0});
+  V(mi,{date:R(-260),doctorId:dG.id,facilityId:fG.id,specialty:'Gastroenterologie',types:['Consultație'],reason:'Arsuri la stomac',diagnosis:'Gastrită',treatment:'Tratament 8 săptămâni și regim alimentar',cost:300,conditionIds:[cGas.id]});
+  V(mi,{date:R(-160),doctorId:dF2.id,specialty:'Medicină de familie',types:['Control','Analize'],reason:'Control anual',cost:0});
+  const Rep=(p,date,fac,visit,conds,rows,notes)=>{const r=sv('labreports',{personId:p.id,date,facilityId:fac.id,visitId:visit?visit.id:null,conditionIds:conds||[],notes:notes||'',specialty:''});
+    rows.forEach(x=>sv('labs',{personId:p.id,reportId:r.id,date,param:x[0],v:x[1],vt:'',u:x[2],lo:x[3],hi:x[4]}));return r};
+  const rbase=-1100;
+  Rep(il,R(rbase+10),fL,null,[],[['Hemoglobină',12.4,'g/dL',11.5,15.5],['Feritină',22,'ng/mL',14,79],['Vitamina D (25-OH)',41,'ng/mL',30,100]]);
+  Rep(il,R(-740),fL,null,[],[['Hemoglobină',12.1,'g/dL',11.5,15.5],['Feritină',17,'ng/mL',14,79],['Vitamina D (25-OH)',33,'ng/mL',30,100]]);
+  const rep3=Rep(il,R(-358),fL,vFam,[cFier.id],[['Hemoglobină',11.8,'g/dL',11.5,15.5],['Feritină',12,'ng/mL',14,79],['Vitamina D (25-OH)',22,'ng/mL',30,100],['Glicemie',84,'mg/dL',70,99],['TSH',2.1,'mIU/L',0.6,4.5]]);
+  Rep(il,R(-200),fL,null,[cFier.id],[['Hemoglobină',11.7,'g/dL',11.5,15.5],['Feritină',13,'ng/mL',14,79],['Vitamina D (25-OH)',28,'ng/mL',30,100]]);
+  const rep5=Rep(il,R(-27),fL,null,[cFier.id],[['Hemoglobină',11.4,'g/dL',11.5,15.5],['Feritină',19,'ng/mL',14,79],['Vitamina D (25-OH)',36,'ng/mL',30,100],['Glicemie',88,'mg/dL',70,99],['TSH',2.6,'mIU/L',0.6,4.5]]);
+  Rep(co,R(-440),fL,null,[],[['Hemoglobină',12.9,'g/dL',12,16],['TSH',2.2,'mIU/L',0.4,4],['Vitamina D (25-OH)',33,'ng/mL',30,100]]);
+  Rep(co,R(-80),fL,vCa,[cHta.id,cTir.id],[['Hemoglobină',13.1,'g/dL',12,16],['TSH',1.8,'mIU/L',0.4,4],['Vitamina D (25-OH)',29,'ng/mL',30,100],['Colesterol total',204,'mg/dL',null,200],['LDL colesterol',128,'mg/dL',null,130],['Creatinină',0.8,'mg/dL',0.5,1.0]]);
+  Rep(mi,R(-530),fL,null,[],[['Glicemie',91,'mg/dL',70,99],['LDL colesterol',126,'mg/dL',null,130]]);
+  Rep(mi,R(-158),fL,null,[],[['Glicemie',94,'mg/dL',70,99],['LDL colesterol',118,'mg/dL',null,130]]);
+  const M_=(p,o)=>sv('meds',Object.assign({personId:p.id,description:'',dose:'',frequency:'',start:null,end:null,conditionIds:[],visitId:null,notes:''},o));
+  M_(il,{name:'Spray nazal cu corticoid (exemplu)',description:'Tratament local pentru simptomele nazale',dose:'1 pulverizare în fiecare nară',frequency:'o dată pe zi, în sezon',start:R(-200),end:R(-120),conditionIds:[cRin.id],visitId:vAl.id});
+  M_(il,{name:'Supliment de fier (exemplu)',description:'Pentru corectarea deficitului',dose:'conform recomandării medicului',frequency:'zilnic',start:R(-358),conditionIds:[cFier.id],visitId:vFam.id,notes:'Se urmărește feritina la 6 luni.'});
+  M_(co,{name:'Amlodipină 5 mg (exemplu)',description:'Tratament pentru tensiune',dose:'1 comprimat',frequency:'o dată pe zi, dimineața',start:'2025-02-15',conditionIds:[cHta.id],visitId:vCa.id});
+  M_(mi,{name:'Omeprazol 20 mg (exemplu)',description:'Tratament pentru gastrită',dose:'1 capsulă',frequency:'o dată pe zi, înainte de masă',start:'2026-01-20',end:'2026-03-20',conditionIds:[cGas.id]});
+  const Sy=(p,o)=>sv('symptoms',Object.assign({personId:p.id,intensity:'',conditionIds:[],visitId:null,notes:'',end:null},o));
+  Sy(il,{name:'Strănut și nas înfundat',start:'2026-09-20',end:'2026-10-10',intensity:'Moderat',conditionIds:[cRin.id],visitId:vAl.id});
+  Sy(il,{name:'Mâncărime la ochi',start:'2026-09-22',end:'2026-10-05',intensity:'Ușor',conditionIds:[cRin.id]});
+  Sy(il,{name:'Oboseală',start:'2025-10-20',end:'2026-01-15',intensity:'Ușor',conditionIds:[cFier.id]});
+  Sy(il,{name:'Durere de dinte',start:'2026-08-15',end:'2026-09-05',intensity:'Moderat',conditionIds:[cCar.id],visitId:vSt.id});
+  Sy(co,{name:'Dureri de cap dimineața',start:'2025-01-20',end:'2025-03-01',intensity:'Moderat',conditionIds:[cHta.id]});
+  Sy(mi,{name:'Arsuri la stomac',start:'2026-01-05',end:'2026-03-30',intensity:'Moderat',conditionIds:[cGas.id]});
+  const X=(p,name,age,date,status,note)=>sv('vaccines',{personId:p.id,name,age,date,status,note:note||'',visitId:null});
+  X(il,'BCG','La naștere','2018-03-16','efectuat','Maternitate');X(il,'Hexavalent, doza 1','2 luni','2018-05-20','efectuat');X(il,'Hexavalent, doza 2','4 luni','2018-07-22','efectuat');
+  X(il,'Hexavalent, doza 3','11 luni','2019-02-15','efectuat');X(il,'ROR, doza 1','12 luni','2019-03-20','efectuat');X(il,'ROR, doza 2','5–7 ani','2024-05-10','efectuat');
+  X(il,'DTP-IPV, rapel','6–7 ani',null,'restant','De discutat cu medicul de familie');X(il,'Gripă sezonieră','Anual, opțional',R(14),'programat');X(il,'HPV','Recomandat de la 11 ani',null,'recomandat','Estimat peste 2–3 ani');
+  X(co,'Gripă sezonieră','Anual',R(-330),'efectuat');X(mi,'Rapel antitetanos (dT)','La 10 ani',R(100),'programat');
+  const Mz=(p,date,o)=>sv('measures',Object.assign({personId:p.id,date,height:null,weight:null,pulse:null,sys:null,dia:null,note:'',source:'manual'},o));
+  [['2020-03-14',87,12.2],['2021-03-14',96,14.5],['2022-03-14',103,16.4],['2023-03-14',110.5,18.6],['2024-03-14',117,21],['2025-03-14',123.5,23.6],[R(-380),126.5,25.4],[R(-200),129.5,27],[R(-15),132.5,28.6]].forEach(x=>Mz(il,x[0],{height:x[1],weight:x[2]}));
+  Mz(co,R(-70),{height:168,weight:61.5,pulse:68,sys:128,dia:82});Mz(co,R(-250),{weight:61,pulse:70,sys:136,dia:88});Mz(co,R(-30),{pulse:66,sys:124,dia:80});Mz(co,R(-440),{weight:60.4,pulse:72,sys:138,dia:90});
+  Mz(mi,R(-160),{height:181,weight:84,pulse:62,sys:122,dia:78});Mz(mi,R(-530),{weight:83.2,pulse:64,sys:120,dia:76});
+  const Dc=(p,name,type,date,tag,o,blob)=>{const d=sv('docs',Object.assign({personId:p.id,name,type,date,tag,mime:blob.type,size:blob.size,visitId:null,reportId:null,conditionIds:[]},o));putBlob(d.id,blob);return d};
+  Dc(il,'Bilet de ieșire – Alergologie','img',R(-15),'Bilet de ieșire',{visitId:vAl.id,conditionIds:[cRin.id]},svgDoc('Bilet de ieșire',['Pacient: Ilinca (exemplu)','Diagnostic: rinită alergică sezonieră','Recomandare: control în primăvară']));
+  Dc(il,'Buletin analize','img',R(-27),'Analize',{reportId:rep5.id},svgDoc('Buletin de analize',['Hemoglobină 11,4 g/dL (11,5–15,5)','Feritină 19 ng/mL (14–79)','Vitamina D 36 ng/mL (30–100)']));
+  Dc(il,'Buletin analize (anul trecut)','img',R(-358),'Analize',{reportId:rep3.id,visitId:vFam.id},svgDoc('Buletin de analize',['Hemoglobină 11,8 g/dL','Feritină 12 ng/mL','Vitamina D 22 ng/mL']));
+  const N=(p,o)=>sv('notes',Object.assign({personId:p.id,date:t,pin:false,conditionIds:[],visitId:null,text:''},o));
+  N(il,{title:'Întrebări pentru controlul din primăvară',text:'Ce simptome apar la începutul sezonului de polen? Merită repetat testul cutanat? Cât timp se continuă tratamentul local?',pin:true,conditionIds:[cRin.id],date:R(-9)});
+  N(il,{title:'Sfaturi de la stomatolog',text:'Periaj de două ori pe zi, ață dentară seara. Mai puține sucuri între mese.',date:R(-55),conditionIds:[cCar.id]});
+  N(co,{title:'De reținut',text:'Tensiunea măsurată acasă dimineața, la aceeași oră, de câteva ori pe lună.',conditionIds:[cHta.id],date:R(-40)});
+  sv('reminders',{personId:il.id,refType:null,refId:null,date:R(160),title:'Analize de control (hemoglobină, feritină, vitamina D)',kind:'Analize',cal:false});
+  sv('reminders',{personId:co.id,refType:null,refId:null,date:R(90),title:'Programare control anual',kind:'Control',cal:false});
+  S.pid=il.id;
+}
+
+/* ═════ 20 · grafice SVG ═════ */
+const AG=[2,3,4,5,6,7,8,9];
+/* ATENȚIE: curbe orientative (fete). Se înlocuiesc cu tabelele oficiale OMS. */
+const REFG={h:{p3:[80,88.4,95,101,106.4,111.8,117,121.5],p50:[86,95,102,109.4,115.7,121.8,127.5,133],p97:[92,102,110,117.5,124.5,131.5,138,144]},
+            w:{p3:[9.7,11.8,13.4,14.9,16.4,17.9,19.5,21.2],p50:[11.5,14,16,18,20.2,22.4,25,28],p97:[13.9,17.2,20,22.8,26,29.5,34,38.5]}};
+const interp=(arr,a)=>{const i=Math.max(0,Math.min(AG.length-2,Math.floor(a-AG[0])));const t=(a-AG[i])/(AG[i+1]-AG[i]);return arr[i]+(arr[i+1]-arr[i])*t};
+function erf(x){const s=Math.sign(x);x=Math.abs(x);const t=1/(1+0.3275911*x);const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y}
+function pctOf(kind,age,val){const r=REFG[kind],p50=interp(r.p50,age),sd=(interp(r.p97,age)-interp(r.p3,age))/3.76;return Math.round(50*(1+erf(((val-p50)/sd)/Math.SQRT2)))}
+function hasBands(p,pts){return !!(p&&p.sex==='F'&&pts.length&&pts.every(x=>{const a=yrs(p.born,x.date);return a>=2&&a<=9}))}
+function growthChart(kind,pts,p){
+  const W=340,H=236,pl=36,pr=10,pt=12,pb=28,r=REFG[kind];
+  const y0=kind==='h'?80:8,y1=kind==='h'?145:40,tk=kind==='h'?[80,100,120,140]:[10,20,30,40];
+  const X=a=>pl+(a-2)/(9-2)*(W-pl-pr),Y=v=>pt+(1-(v-y0)/(y1-y0))*(H-pt-pb);
+  const band=AG.map((a,i)=>X(a)+','+Y(r.p97[i])).join(' ')+' '+AG.slice().reverse().map((a,i)=>X(a)+','+Y(r.p3[AG.length-1-i])).join(' ');
+  const line=k=>AG.map((a,i)=>X(a)+','+Y(r[k][i])).join(' ');
+  const cp=pts.map(q=>({a:yrs(p.born,q.date),v:q.v,d:q.date}));
+  const sel=S.sel.gr==null?cp.length-1:Math.min(S.sel.gr,cp.length-1);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Curba de creștere cu percentilele 3, 50 și 97">`;
+  tk.forEach(t=>s+=`<line class="grid" x1="${pl}" x2="${W-pr}" y1="${Y(t)}" y2="${Y(t)}"/><text x="${pl-6}" y="${Y(t)+3}" text-anchor="end">${t}</text>`);
+  AG.forEach(a=>s+=`<text x="${X(a)}" y="${H-10}" text-anchor="middle">${a}</text>`);
+  s+=`<text x="${W-pr}" y="${H}" text-anchor="end">vârsta (ani)</text>`;
+  s+=`<polygon class="gband" points="${band}"/><polyline class="pe" points="${line('p3')}"/><polyline class="pe" points="${line('p97')}"/><polyline class="p50" points="${line('p50')}"/>`;
+  s+=`<text x="${X(9)-2}" y="${Y(r.p97[7])-4}" text-anchor="end">P97</text><text x="${X(9)-2}" y="${Y(r.p50[7])-4}" text-anchor="end">P50</text><text x="${X(9)-2}" y="${Y(r.p3[7])+11}" text-anchor="end">P3</text>`;
+  s+=`<polyline class="ln" points="${cp.map(q=>X(q.a)+','+Y(q.v)).join(' ')}"/>`;
+  cp.forEach((q,i)=>s+=`<circle class="pt${i===sel?' sel':''}" cx="${X(q.a)}" cy="${Y(q.v)}" r="${i===sel?6:4}"/><circle class="hit" data-act="selpt" data-key="gr" data-i="${i}" cx="${X(q.a)}" cy="${Y(q.v)}" r="14"/>`);
+  return {svg:s+'</svg>',sel:cp[sel]}}
+function tsChart(pts,o){
+  o=o||{};const W=340,H=216,pl=40,pr=14,pt=16,pb=28;
+  const xs=pts.map(p=>+D(p.d));let x0=Math.min.apply(null,xs),x1=Math.max.apply(null,xs);if(x0===x1){x0-=30*864e5;x1+=30*864e5}
+  const vs=pts.map(p=>p.v);let ymin=Math.min.apply(null,vs.concat(o.lo==null?[]:[o.lo])),ymax=Math.max.apply(null,vs.concat(o.hi==null?[]:[o.hi]));
+  const pad=(ymax-ymin||1)*0.2;ymin-=pad;ymax+=pad;
+  const X=t=>pl+(t-x0)/(x1-x0)*(W-pl-pr),Y=v=>pt+(1-(v-ymin)/(ymax-ymin))*(H-pt-pb);
+  const dec=(ymax-ymin)>20?0:1,sel=S.sel[o.key]==null?pts.length-1:Math.min(S.sel[o.key],pts.length-1);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.label||'Evoluție în timp')}">`;
+  [0,1,2,3].forEach(i=>{const v=ymin+(ymax-ymin)*i/3;s+=`<line class="grid" x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${pl-6}" y="${Y(v)+3}" text-anchor="end">${v.toFixed(dec).replace('.',',')}</text>`});
+  if(o.lo!=null||o.hi!=null){const top=o.hi!=null?Y(o.hi):pt,bot=o.lo!=null?Y(o.lo):H-pb;s+=`<rect class="band" x="${pl}" y="${top}" width="${W-pl-pr}" height="${Math.max(0,bot-top)}"/><text x="${W-pr-2}" y="${top+11}" text-anchor="end">interval de referință</text>`}
+  const idx=Array.from(new Set([0,Math.floor((pts.length-1)/2),pts.length-1]));
+  idx.forEach(i=>s+=`<text x="${Math.min(W-pr-14,Math.max(pl+14,X(xs[i])))}" y="${H-9}" text-anchor="middle">${fmy(pts[i].d)}</text>`);
+  s+=`<polyline class="ln" points="${pts.map((p,i)=>X(xs[i])+','+Y(p.v)).join(' ')}"/>`;
+  pts.forEach((p,i)=>{const f=flag(p.v,o.lo,o.hi);
+    s+=`<circle class="pt${f?' bad':''}${i===sel?' sel':''}" cx="${X(xs[i])}" cy="${Y(p.v)}" r="${i===sel?6:4.5}"/>`;
+    if(f)s+=`<text class="flagt" x="${X(xs[i])}" y="${f==='low'?Y(p.v)+17:Y(p.v)-10}" text-anchor="middle">${f==='low'?'▼':'▲'}</text>`;
+    s+=`<circle class="hit" data-act="selpt" data-key="${o.key}" data-i="${i}" cx="${X(xs[i])}" cy="${Y(p.v)}" r="14"/>`});
+  return {svg:s+'</svg>',sel:pts[sel]}}
+function spark(pts,lo,hi){
+  const W=84,H=32,xs=pts.map(p=>+D(p.d));let x0=Math.min.apply(null,xs),x1=Math.max.apply(null,xs);if(x0===x1){x0-=1;x1+=1}
+  const vs=pts.map(p=>p.v);let a=Math.min.apply(null,vs.concat(lo==null?[]:[lo])),b=Math.max.apply(null,vs.concat(hi==null?[]:[hi]));const pd=(b-a||1)*.15;a-=pd;b+=pd;
+  const X=t=>3+(t-x0)/(x1-x0)*(W-6),Y=v=>3+(1-(v-a)/(b-a))*(H-6);
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true" class="chart" style="width:${W}px;flex:none">`;
+  if(lo!=null||hi!=null){const t=hi!=null?Y(hi):0,bt=lo!=null?Y(lo):H;s+=`<rect class="band" x="0" y="${t}" width="${W}" height="${Math.max(0,bt-t)}"/>`}
+  s+=`<polyline class="ln" style="stroke-width:1.8" points="${pts.map((p,i)=>X(xs[i])+','+Y(p.v)).join(' ')}"/>`;
+  const l=pts[pts.length-1];return s+`<circle class="pt${flag(l.v,lo,hi)?' bad':''}" cx="${X(xs[xs.length-1])}" cy="${Y(l.v)}" r="3.5"/></svg>`}
+const bars=(items,fmt)=>{const mx=Math.max.apply(null,[1].concat(items.map(i=>i.val)));return items.map(i=>`<div class="bar"><span>${esc(i.label)}</span><div class="tr"><i style="width:${i.val/mx*100}%"></i></div><b class="num">${fmt?fmt(i.val):i.val}</b></div>`).join('')};
+
+/* ═════ 30 · panouri și formulare ═════ */
+function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{e.hidden=true},2800)}
+const LAYERS=[];
+function openPanel(title,html,wide){
+  const host=$('#sheet');LAYERS.forEach(l=>{l.hidden=true});
+  const el=document.createElement('div');el.className='layer';
+  el.innerHTML=`<div class="scrim" data-act="close"></div><div class="panel${wide?' wide':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}" tabindex="-1"><div class="ph"><h2>${esc(title)}</h2><button class="iconbtn" data-act="close" aria-label="Închide">${ic('x')}</button></div><div class="pb">${html}</div></div>`;
+  host.appendChild(el);host.hidden=false;LAYERS.push(el);histPush();const p=$('.panel',el);if(p)p.focus();return el}
+function closePanel(nohist){const el=LAYERS.pop();if(el)el.remove();const top=LAYERS[LAYERS.length-1];if(top)top.hidden=false;else $('#sheet').hidden=true;if(el&&!nohist)histPop(1)}
+function closeAllPanels(){const n=LAYERS.length;while(LAYERS.length)closePanel(true);histPop(n)}
+
+/* liste de opțiuni */
+const optDoctors=()=>[['','— nealeasă —']].concat(DB.doctors.slice().sort(cmpName).map(d=>[d.id,d.name+((d.specialties||[]).length?' · '+d.specialties.join(', '):'')]));
+const optFacilities=()=>[['','— nealeasă —']].concat(DB.facilities.slice().sort(cmpName).map(f=>[f.id,f.name+(f.city?' · '+f.city:'')]));
+const optSpecs=()=>[['','— fără —']].concat(META.specialties.map(s=>[s,s]));
+const optConds=pid=>mine('conditions',pid).slice().sort(cmpName).map(c=>[c.id,c.name+(condActive(c)?'':' (încheiată)')]);
+const optVisits=pid=>[['','— nelegată —']].concat(mine('visits',pid).slice().sort(cmpDateDesc).map(v=>[v.id,vlabel(v)]));
+const optReports=pid=>[['','— nelegat —']].concat(mine('labreports',pid).slice().sort(cmpDateDesc).map(r=>[r.id,'Analize din '+fd(r.date)]));
+const optSimple=a=>a.map(x=>[x,x]);
+
+const multiItem=(k,o,on)=>`<label class="mi"><input type="checkbox" name="${k}[]" value="${esc(o[0])}"${on?' checked':''}><span>${esc(o[1])}</span></label>`;
+const rowHtml=r=>`<div class="vrow"><input data-f="param" list="dl-params" placeholder="Parametru" value="${esc(r.param||'')}" autocomplete="off"><div class="vr2"><input data-f="val" inputmode="decimal" placeholder="Valoare" value="${esc(r.val||'')}" autocomplete="off"><input data-f="u" placeholder="Unit." value="${esc(r.u||'')}" autocomplete="off"><input data-f="lo" inputmode="decimal" placeholder="Min" value="${esc(r.lo||'')}" autocomplete="off"><input data-f="hi" inputmode="decimal" placeholder="Max" value="${esc(r.hi||'')}" autocomplete="off"><button type="button" class="iconbtn sm" data-act="rowrm" aria-label="Șterge rândul">${ic('x',16)}</button></div></div>`;
+function fieldHtml(f,rec,ctx){
+  const id='ff-'+f.k,v=rec[f.k],cls='f'+(f.half?' half':''),lab=esc(f.l)+(f.req?' *':''),help=f.help?`<span class="sub">${esc(f.help)}</span>`:'';
+  switch(f.t){
+    case 'text':return `<label class="${cls}" for="${id}">${lab}<input type="text" id="${id}" name="${f.k}" value="${esc(v)}"${f.ph?` placeholder="${esc(f.ph)}"`:''}${f.list?` list="dl-${f.k}"`:''} autocomplete="off">${help}</label>`+(f.list?`<datalist id="dl-${f.k}">${f.list().map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`:'');
+    case 'area':return `<label class="${cls}" for="${id}">${lab}<textarea id="${id}" name="${f.k}"${f.ph?` placeholder="${esc(f.ph)}"`:''}>${esc(v)}</textarea>${help}</label>`;
+    case 'date':return `<label class="${cls}" for="${id}">${lab}<input type="date" id="${id}" name="${f.k}" value="${esc(v)}" data-change="${f.onchange||''}"></label>`;
+    case 'time':return `<label class="${cls}" for="${id}">${lab}<input type="time" id="${id}" name="${f.k}" value="${esc(v)}"></label>`;
+    case 'num':return `<label class="${cls}" for="${id}">${lab}<input type="text" inputmode="decimal" id="${id}" name="${f.k}" value="${v==null?'':esc(String(v).replace('.',','))}"${f.ph?` placeholder="${esc(f.ph)}"`:''} autocomplete="off">${help}</label>`;
+    case 'select':{const opts=f.opts(rec,ctx);
+      return `<div class="${cls}"><label for="${id}">${lab}</label><div class="selrow"><select id="${id}" name="${f.k}" data-change="${f.onchange||''}">${opts.map(o=>`<option value="${esc(o[0])}"${String(o[0])===String(v==null?'':v)?' selected':''}>${esc(o[1])}</option>`).join('')}</select>${f.quick?`<button type="button" class="iconbtn sm" data-act="quick" data-q="${f.quick}" data-for="${id}" aria-label="Adaugă nou">${ic('plus',18)}</button>`:''}</div>${help}</div>`}
+    case 'multi':{const opts=f.opts(rec,ctx),cur=Array.isArray(v)?v:[];
+      return `<div class="${cls}" id="${id}"><span class="fl">${lab}</span><div class="multi" data-k="${f.k}">${opts.map(o=>multiItem(f.k,o,cur.indexOf(o[0])>=0)).join('')||'<span class="sub nomulti">Nimic de ales încă.</span>'}</div>${f.quick?`<div><button type="button" class="btn ghost sm" data-act="quick" data-q="${f.quick}" data-for="${id}">${ic('plus',14)}${esc(f.quickLabel||'Adaugă')}</button></div>`:''}${f.custom?`<input type="text" name="${f.k}__new" placeholder="${esc(f.custom)}" autocomplete="off">`:''}${help}</div>`}
+    case 'check':return `<label class="chk full" for="${id}"><input type="checkbox" id="${id}" name="${f.k}"${v?' checked':''}><span>${esc(f.l)}${help}</span></label>`;
+    case 'rows':{const rows=(v&&v.length)?v:[{},{},{}];
+      return `<div class="f" data-rows="1"><span class="fl">${lab}</span><div class="vrows" id="${id}">${rows.map(rowHtml).join('')}</div><div class="rowbtns"><button type="button" class="btn ghost sm" data-act="rowadd">${ic('plus',14)}Parametru</button><button type="button" class="btn ghost sm" data-act="rowprev">Parametrii din ultima analiză</button></div><datalist id="dl-params">${allParams().map(x=>`<option value="${esc(x)}">`).join('')}</datalist>${help}</div>`}
+    case 'files':return `<div class="f"><span class="fl">${lab}</span><input type="file" id="${id}" name="${f.k}" multiple accept="image/*,application/pdf">${help}</div>`;
+  }
+  return ''}
+function collect(form,fields){
+  const out={};
+  fields.forEach(f=>{const el=form.elements[f.k];
+    switch(f.t){
+      case 'num':out[f.k]=el?num(el.value):null;break;
+      case 'check':out[f.k]=!!(el&&el.checked);break;
+      case 'multi':out[f.k]=$$('input[name="'+f.k+'[]"]:checked',form).map(x=>x.value);if(f.custom){const n=form.elements[f.k+'__new'];out[f.k+'__new']=n?n.value.trim():''}break;
+      case 'rows':out[f.k]=$$('.vrow',form).map(r=>({param:$('[data-f=param]',r).value.trim(),val:$('[data-f=val]',r).value.trim(),u:$('[data-f=u]',r).value.trim(),lo:$('[data-f=lo]',r).value.trim(),hi:$('[data-f=hi]',r).value.trim()})).filter(r=>r.param||r.val);break;
+      case 'files':out[f.k]=el&&el.files?Array.prototype.slice.call(el.files):[];break;
+      default:out[f.k]=el?String(el.value).trim():'';
+    }});
+  return out}
+async function compressImage(file){
+  try{if(!/^image\/(jpeg|png|webp|heic|heif)$/i.test(file.type)||file.size<1.5*1048576)return file;
+    const bmp=await createImageBitmap(file),m=2200,k=Math.min(1,m/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');
+    c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+    const b=await new Promise(r=>c.toBlob(r,'image/jpeg',0.85));if(b&&b.size<file.size){b.name=file.name;return new File([b],file.name.replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'})}
+  }catch(e){}
+  return file}
+async function attachFiles(files,pid,o){
+  for(const f0 of (files||[])){const f=await compressImage(f0),isPdf=/pdf/i.test(f.type)||/\.pdf$/i.test(f.name);
+    const d=save('docs',{personId:pid,name:(o.name&&files.length===1)?o.name:f.name.replace(/\.[^.]+$/,''),type:isPdf?'pdf':'img',mime:f.type,size:f.size,date:o.date||todayS(),tag:o.tag||'Alt document',visitId:o.visitId||null,reportId:o.reportId||null,conditionIds:o.conditionIds||[]});putBlob(d.id,f)}}
+function replaceLabs(rep,rows){
+  DB.labs.filter(l=>l.reportId===rep.id).forEach(l=>{const i=DB.labs.indexOf(l);if(i>=0)DB.labs.splice(i,1);idbWrite('labs',s=>s.delete(l.id))});
+  rows.forEach(x=>{if(!x.param)return;const n=num(x.val);save('labs',{personId:rep.personId,reportId:rep.id,date:rep.date,param:x.param,v:n,vt:n==null?x.val:'',u:x.u,lo:num(x.lo),hi:num(x.hi)})})}
+
+/* scheme */
+const SCHEMAS={};
+SCHEMAS.person={title:'Profil',
+  prep:r=>Object.assign({},r,{allergiesText:(r.allergies||[]).join('\n')}),
+  fields:()=>[{k:'name',l:'Prenume',t:'text',req:1},{k:'born',l:'Data nașterii',t:'date',half:1},{k:'sex',l:'Sex',t:'select',half:1,opts:()=>[['','—'],['F','Feminin'],['M','Masculin']]},
+    {k:'rel',l:'Relația cu tine',t:'text',ph:'Fiica, Soția, Tu…',half:1},{k:'blood',l:'Grupa sanguină',t:'text',half:1,ph:'ex. A (II) Rh pozitiv'},
+    {k:'allergiesText',l:'Alergii (câte una pe rând)',t:'area'},{k:'notes',l:'Note',t:'area'}],
+  save:(v,rec)=>{const r=rec||{color:DB.persons.length%6};Object.assign(r,{name:v.name,born:v.born,sex:v.sex,rel:v.rel,blood:v.blood,allergies:v.allergiesText.split('\n').map(s=>s.trim()).filter(Boolean),notes:v.notes});save('persons',r);if(!S.pid)S.pid=r.id;return r}};
+SCHEMAS.doctor={title:'Medic',
+  fields:(r,ctx)=>{const f=[{k:'name',l:'Nume',t:'text',req:1,ph:'Dr. Nume Prenume'},{k:'specialties',l:'Specialități',t:'multi',opts:()=>optSimple(META.specialties)},
+    {k:'facilityIds',l:'Unități medicale',t:'multi',opts:()=>optFacilities().slice(1),quick:'facility',quickLabel:'Unitate nouă'},{k:'phone',l:'Telefon',t:'text',half:1},{k:'email',l:'E-mail',t:'text',half:1},{k:'notes',l:'Note',t:'area'}];
+    if(ctx.pid&&DB.persons.length)f.push({k:'gp',l:'Medic de familie pentru profilul curent',t:'check'});return f},
+  prep:(r,ctx)=>Object.assign({},r,{gp:!!(ctx.pid&&get('persons',ctx.pid)&&get('persons',ctx.pid).gpId===r.id&&r.id)}),
+  save:(v,rec,ctx)=>{const r=rec||{};Object.assign(r,{name:v.name,specialties:v.specialties,facilityIds:v.facilityIds,phone:v.phone,email:v.email,notes:v.notes});save('doctors',r);
+    const p=get('persons',ctx.pid);if(p&&v.gp!==undefined){if(v.gp){p.gpId=r.id;save('persons',p)}else if(p.gpId===r.id){p.gpId=null;save('persons',p)}}return r}};
+SCHEMAS.facility={title:'Unitate medicală',
+  fields:()=>[{k:'name',l:'Nume',t:'text',req:1},{k:'kind',l:'Tip',t:'select',opts:()=>optSimple(FACILITY_KINDS)},{k:'city',l:'Localitate',t:'text',half:1},{k:'phone',l:'Telefon',t:'text',half:1},{k:'address',l:'Adresă',t:'text'},{k:'notes',l:'Note',t:'area'}],
+  save:(v,rec)=>{const r=rec||{};Object.assign(r,{name:v.name,kind:v.kind,city:v.city,phone:v.phone,address:v.address,notes:v.notes});return save('facilities',r)}};
+SCHEMAS.condition={title:'Afecțiune',
+  fields:()=>[{k:'name',l:'Denumire',t:'text',req:1,ph:'ex. Hipertensiune arterială'},{k:'specialty',l:'Specialitate',t:'select',opts:optSpecs},{k:'start',l:'Data debutului',t:'date',half:1},{k:'end',l:'Data încheierii (gol = activă)',t:'date',half:1},
+    {k:'chronic',l:'Afecțiune cronică',t:'check'},{k:'notes',l:'Note',t:'area'}],
+  save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid};Object.assign(r,{name:v.name,specialty:v.specialty,start:v.start||null,end:v.end||null,chronic:v.chronic,notes:v.notes});return save('conditions',r)}};
+SCHEMAS.visit={title:'Vizită',
+  defaults:()=>({date:todayS(),status:'efectuată',types:['Consultație']}),
+  fields:(r,ctx)=>[{k:'date',l:'Data',t:'date',req:1,half:1,onchange:'visitDate'},{k:'time',l:'Ora (opțional)',t:'time',half:1},
+    {k:'status',l:'Stare',t:'select',opts:()=>optSimple(['efectuată','planificată','anulată'])},
+    {k:'types',l:'Tipuri de investigații și servicii',t:'multi',opts:()=>optSimple(META.visitTypes),custom:'Alt tip (opțional, separă cu virgulă)'},
+    {k:'doctorId',l:'Medic',t:'select',opts:optDoctors,quick:'doctor',onchange:'visitDoctor'},{k:'facilityId',l:'Unitate medicală',t:'select',opts:optFacilities,quick:'facility'},
+    {k:'specialty',l:'Specialitate',t:'select',opts:optSpecs},{k:'reason',l:'Motivul vizitei',t:'text'},{k:'diagnosis',l:'Diagnostic',t:'text'},
+    {k:'treatment',l:'Tratament recomandat',t:'area'},{k:'notes',l:'Concluzii și note',t:'area'},
+    {k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'},
+    {k:'cost',l:'Cost ('+(META.currency||'RON')+')',t:'num',half:1,ph:'ex. 250'},{k:'costNote',l:'Observații cost',t:'text',half:1,ph:'plătit, decontat…'},
+    {k:'next',l:'Următorul control recomandat',t:'date',help:'Se adaugă automat la „Ce urmează”.'},
+    {k:'files',l:'Documente (poze sau PDF)',t:'files'}],
+  save:async(v,rec,ctx)=>{const r=rec||{personId:ctx.pid};const types=v.types.slice();
+    (v.types__new||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(t=>{if(types.indexOf(t)<0)types.push(t);if(META.visitTypes.indexOf(t)<0){META.visitTypes.push(t);saveMeta()}});
+    let sp=v.specialty;if(!sp&&v.doctorId){const d=get('doctors',v.doctorId);if(d&&(d.specialties||[]).length===1)sp=d.specialties[0]}
+    Object.assign(r,{date:v.date,time:v.time,status:v.status||'efectuată',types,doctorId:v.doctorId||null,facilityId:v.facilityId||null,specialty:sp,reason:v.reason,diagnosis:v.diagnosis,treatment:v.treatment,notes:v.notes,conditionIds:v.conditionIds,cost:v.cost,costNote:v.costNote,next:v.next||null});
+    save('visits',r);syncVisitReminder(r);await attachFiles(v.files,r.personId,{visitId:r.id,date:r.date,tag:'Alt document',conditionIds:r.conditionIds});return r}};
+SCHEMAS.symptom={title:'Simptom',
+  fields:(r,ctx)=>[{k:'name',l:'Simptom',t:'text',req:1,ph:'ex. Dureri de cap'},{k:'start',l:'De când',t:'date',half:1},{k:'end',l:'Până când (gol = în curs)',t:'date',half:1},
+    {k:'intensity',l:'Intensitate',t:'select',opts:()=>[['','—'],['Ușor','Ușor'],['Moderat','Moderat'],['Sever','Sever']]},
+    {k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'},{k:'visitId',l:'Vizită legată',t:'select',opts:()=>optVisits(ctx.pid)},{k:'notes',l:'Note',t:'area'}],
+  save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid};Object.assign(r,{name:v.name,start:v.start||null,end:v.end||null,intensity:v.intensity,conditionIds:v.conditionIds,visitId:v.visitId||null,notes:v.notes});return save('symptoms',r)}};
+SCHEMAS.labreport={title:'Raport de analize',
+  defaults:()=>({date:todayS()}),
+  prep:(r)=>{if(r.id){r=Object.assign({},r);r.values=reportLabs(r.id).map(l=>({param:l.param,val:l.v!=null?nv(l.v):(l.vt||''),u:l.u,lo:l.lo!=null?nv(l.lo):'',hi:l.hi!=null?nv(l.hi):''}))}return r},
+  fields:(r,ctx)=>[{k:'date',l:'Data recoltării',t:'date',req:1,half:1},{k:'facilityId',l:'Laborator / unitate',t:'select',opts:optFacilities,quick:'facility',half:1},
+    {k:'visitId',l:'Vizită legată',t:'select',opts:()=>optVisits(ctx.pid)},{k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'},
+    {k:'specialty',l:'Specialitate (opțional)',t:'select',opts:optSpecs},
+    {k:'values',l:'Valori',t:'rows',help:'Valoare numerică sau text (ex. „negativ”). Intervalul de referință se copiază exact de pe buletin.'},
+    {k:'notes',l:'Note',t:'area'},{k:'files',l:'Buletin (poze sau PDF)',t:'files'}],
+  save:async(v,rec,ctx)=>{const r=rec||{personId:ctx.pid};Object.assign(r,{date:v.date,facilityId:v.facilityId||null,visitId:v.visitId||null,conditionIds:v.conditionIds,specialty:v.specialty,notes:v.notes});
+    save('labreports',r);replaceLabs(r,v.values);await attachFiles(v.files,r.personId,{reportId:r.id,visitId:r.visitId,date:r.date,tag:'Analize',conditionIds:r.conditionIds});return r}};
+SCHEMAS.med={title:'Medicament',
+  fields:(r,ctx)=>[{k:'name',l:'Denumire',t:'text',req:1},{k:'description',l:'Descriere',t:'text',ph:'la ce folosește'},{k:'dose',l:'Dozaj',t:'text',half:1,ph:'ex. 5 mg, 1 comprimat'},{k:'frequency',l:'Frecvență',t:'text',half:1,ph:'ex. o dată pe zi'},
+    {k:'start',l:'Data început',t:'date',half:1},{k:'end',l:'Data final (gol = în curs)',t:'date',half:1},
+    {k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'},{k:'visitId',l:'Prescris la vizita',t:'select',opts:()=>optVisits(ctx.pid)},{k:'notes',l:'Note',t:'area'}],
+  save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid};Object.assign(r,{name:v.name,description:v.description,dose:v.dose,frequency:v.frequency,start:v.start||null,end:v.end||null,conditionIds:v.conditionIds,visitId:v.visitId||null,notes:v.notes});return save('meds',r)}};
+SCHEMAS.vax={title:'Vaccin',
+  fields:()=>[{k:'name',l:'Vaccin',t:'text',req:1},{k:'status',l:'Stare',t:'select',opts:()=>optSimple(['efectuat','programat','restant','recomandat'])},{k:'date',l:'Data',t:'date',half:1},{k:'age',l:'Vârsta recomandată',t:'text',half:1,ph:'ex. 6–7 ani'},{k:'note',l:'Note',t:'text'}],
+  defaults:()=>({status:'efectuat',date:todayS()}),
+  save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid};Object.assign(r,{name:v.name,status:v.status,date:v.date||null,age:v.age,note:v.note});return save('vaccines',r)}};
+SCHEMAS.measure={title:'Măsurători',
+  defaults:()=>({date:todayS()}),
+  fields:()=>[{k:'date',l:'Data',t:'date',req:1},{k:'height',l:'Înălțime (cm)',t:'num',half:1},{k:'weight',l:'Greutate (kg)',t:'num',half:1},{k:'pulse',l:'Puls (bpm)',t:'num',half:1},{k:'sys',l:'Tensiune sistolică',t:'num',half:1},{k:'dia',l:'Tensiune diastolică',t:'num',half:1},{k:'note',l:'Note',t:'text',half:1}],
+  save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid,source:'manual'};Object.assign(r,{date:v.date,height:v.height,weight:v.weight,pulse:v.pulse,sys:v.sys,dia:v.dia,note:v.note});return save('measures',r)}};
+SCHEMAS.note={title:'Notă',
+  fields:(r,ctx)=>[{k:'title',l:'Titlu',t:'text',req:1},{k:'text',l:'Text',t:'area'},{k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'},{k:'pin',l:'Fixează sus',t:'check'}],
+  save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid,date:todayS()};Object.assign(r,{title:v.title,text:v.text,conditionIds:v.conditionIds,pin:v.pin});return save('notes',r)}};
+SCHEMAS.doc={title:'Document',
+  defaults:()=>({date:todayS(),tag:'Alt document'}),
+  fields:(r,ctx)=>(r.id?[]:[{k:'files',l:'Fișier (poză sau PDF)',t:'files',req:1}]).concat([{k:'name',l:'Nume',t:'text',ph:'implicit, numele fișierului'},{k:'tag',l:'Tip',t:'select',opts:()=>optSimple(DOC_TAGS),half:1},{k:'date',l:'Data',t:'date',half:1},
+    {k:'visitId',l:'Vizită legată',t:'select',opts:()=>optVisits(ctx.pid)},{k:'reportId',l:'Raport de analize legat',t:'select',opts:()=>optReports(ctx.pid)},
+    {k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'}]),
+  save:async(v,rec,ctx)=>{if(rec){Object.assign(rec,{name:v.name||rec.name,tag:v.tag,date:v.date,visitId:v.visitId||null,reportId:v.reportId||null,conditionIds:v.conditionIds});return save('docs',rec)}
+    await attachFiles(v.files,ctx.pid,{name:v.name,tag:v.tag,date:v.date,visitId:v.visitId,reportId:v.reportId,conditionIds:v.conditionIds});return null}};
+SCHEMAS.reminder={title:'Reminder',
+  defaults:()=>({date:addDays(todayS(),30),kind:'Control'}),
+  fields:()=>[{k:'title',l:'Ce trebuie făcut',t:'text',req:1},{k:'date',l:'Data',t:'date',req:1,half:1},{k:'kind',l:'Tip',t:'select',half:1,opts:()=>optSimple(['Control','Analize','Vaccin','Altele'])}],
+  save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid,refType:null,refId:null,cal:false};Object.assign(r,{title:v.title,date:v.date,kind:v.kind});return save('reminders',r)}};
+
+const FORM_CB={};
+function openForm(type,o){
+  o=o||{};const sc=SCHEMAS[type];if(!sc)return;const rec=o.id?get(COLL[type],o.id):null;
+  const ctx={pid:o.pid||(rec&&rec.personId)||S.pid,nested:!!o.nested};
+  let base=rec?clone(rec):Object.assign({},sc.defaults?sc.defaults(ctx):{},o.prefill||{});if(sc.prep)base=sc.prep(base,ctx);
+  const fields=sc.fields(base,ctx),cb=o.onSaved?uid():'';if(cb)FORM_CB[cb]=o.onSaved;
+  const body=`<form data-form="${type}" data-id="${rec?rec.id:''}" data-ctx="${J(ctx)}" data-cb="${cb}" novalidate><div class="fgrid">${fields.map(f=>fieldHtml(f,base,ctx)).join('')}</div><div class="fbtns"><button class="btn block" type="submit">Salvează</button>${rec?`<button type="button" class="btn ghost block danger" data-act="delask">${ic('trash',16)}Șterge</button>`:''}</div></form>`;
+  openPanel((rec?'Editează · ':'Nou · ')+sc.title,body);
+  const first=$('input[type=text]:not([list]),input[type=date]',LAYERS[LAYERS.length-1]);if(first&&!rec&&type!=='visit'&&window.matchMedia&&matchMedia('(pointer:fine)').matches)first.focus()}
+async function submitForm(form){
+  const type=form.dataset.form,sc=SCHEMAS[type],id=form.dataset.id,ctx=JSON.parse(form.dataset.ctx||'{}'),cb=form.dataset.cb;
+  const rec=id?get(COLL[type],id):null,base=rec?clone(rec):{},fields=sc.fields(sc.prep?sc.prep(base,ctx):base,ctx),vals=collect(form,fields);
+  const miss=fields.find(f=>f.req&&(f.t==='files'?(!vals[f.k].length&&!id):(vals[f.k]===''||vals[f.k]==null)));
+  if(miss){toast('Completează: '+miss.l);const e=form.elements[miss.k];if(e&&e.focus)e.focus();return}
+  const btn=$('button[type=submit]',form);if(btn)btn.disabled=true;
+  let saved;try{saved=await sc.save(vals,rec,ctx)}catch(e){toast('Eroare la salvare: '+e.message);if(btn)btn.disabled=false;return}
+  if(ctx.nested){closePanel();if(cb&&FORM_CB[cb]){FORM_CB[cb](saved);delete FORM_CB[cb]}toast('Adăugat');return}
+  closeAllPanels();render(true);toast(dbError||'Salvat')}
+function quickAdded(forId,q,rec){
+  const el=document.getElementById(forId);if(!el)return;
+  const label=q==='doctor'?rec.name+((rec.specialties||[]).length?' · '+rec.specialties.join(', '):''):rec.name;
+  if(el.tagName==='SELECT'){const o=document.createElement('option');o.value=rec.id;o.textContent=label;el.appendChild(o);el.value=rec.id;el.dispatchEvent(new Event('change',{bubbles:true}))}
+  else{const m=$('.multi',el);if(m){const n=$('.nomulti',m);if(n)n.remove();m.insertAdjacentHTML('beforeend',multiItem(m.dataset.k,[rec.id,label],true))}}}
+
+/* ═════ 40 · ecrane ═════ */
+const chip=(t,c)=>`<span class="chip ${c||''}">${t}</span>`;
+const dbox=s=>{const d=D(s);return d?`<span class="datebox"><b>${d.getDate()}</b><span>${MON[d.getMonth()].replace('.','')} ${String(d.getFullYear()).slice(2)}</span></span>`:'<span class="datebox"><b>–</b><span>fără dată</span></span>'};
+const open=(g,inner,cls)=>`<button class="${cls||'row'}" data-act="open" data-v="${J(g)}">${inner}</button>`;
+const lnk=(g,text)=>`<button class="lnk" data-act="open" data-v="${J(g)}">${esc(text)}</button>`;
+const pname=id=>{const p=get('persons',id);return p?p.name:''};
+const condChips=ids=>(ids||[]).map(i=>get('conditions',i)).filter(Boolean).map(c=>`<button class="chip m lnkchip" data-act="open" data-v="${J({t:'condition',id:c.id})}">${esc(c.name)}</button>`).join('');
+const btnAdd=(type,label,prefill)=>`<button class="btn ghost sm" data-act="add" data-type="${type}"${prefill?` data-prefill="${J(prefill)}"`:''}>${ic('plus',14)}${esc(label)}</button>`;
+const sect=(title,count,add,body)=>`<section class="card"><h2>${esc(title)}${count!=null?` <span class="chip">${count}</span>`:''}<span class="grow"></span>${add||''}</h2>${body}</section>`;
+const grp=(title,items,fn)=>items.length?`<div class="year">${esc(title)}</div><div class="list">${items.map(fn).join('')}</div>`:'';
+const emptyCard=t=>`<div class="card empty">${t}</div>`;
+const editBtn=(type,id)=>`<button class="btn ghost sm" data-act="edit" data-type="${type}" data-id="${id}">${ic('edit',14)}Editează</button>`;
+const kvRow=(k,v)=>v?`<span>${esc(k)}</span><span>${v}</span>`:'';
+
+function calAnchor(ct,cid){
+  const rec=get(COLL[ct],cid);if(!rec)return '';const p=get('persons',rec.personId)||{name:''};let url;
+  if(ct==='visit')url=calUrl('Vizită medicală',rec.reason||'Vizită medicală',rec.date,rec.time,p.name,rec.notes);
+  else if(ct==='reminder')url=calUrl(rec.kind||'Control',rec.title,rec.date,'',p.name,'');
+  else url=calUrl('Vaccin','Vaccin: '+rec.name,rec.date,'',p.name,'');
+  return `<a class="btn ${rec.cal?'soft':'ghost'} sm" href="${esc(url)}" target="_blank" rel="noopener" data-act="calmark" data-ct="${ct}" data-cid="${cid}">${ic('cal',14)}${rec.cal?'Deschis în Calendar':'Adaugă în Google Calendar'}</a>`}
+
+/* rânduri */
+function visitRow(v,showP){
+  const sp=Array.from(specsOf('visit',v))[0]||'',st=v.status;
+  return open({t:'visit',id:v.id},`${dbox(v.date)}<div class="grow"><div class="t">${esc(v.reason||(v.types||[]).join(', ')||'Vizită')}</div><div class="s">${esc([v.time,dname(v.doctorId),fname(v.facilityId)].filter(Boolean).join(' · '))}</div><div class="chips" style="margin-top:6px">${st==='planificată'?chip('Planificată','warn'):st==='anulată'?chip('Anulată','bad'):''}${sp?chip(esc(sp),'m'):''}${(v.types||[]).slice(0,2).map(t=>chip(esc(t))).join('')}${v.cost!=null?chip(money(v.cost)):''}${showP?chip(esc(pname(v.personId))):''}</div></div>${ic('chev',18)}`)}
+function condRow(c){
+  return open({t:'condition',id:c.id},`<span class="ti">${ic('heart',18)}</span><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">${esc(c.specialty||'Fără specialitate')} · ${c.start?fd(c.start):'dată necunoscută'} – ${c.end?fd(c.end):'în curs'}</div><div class="chips" style="margin-top:6px">${condActive(c)?chip('Activă','ok'):chip('Încheiată')}${c.chronic?chip('Cronică','m'):''}</div></div>${ic('chev',18)}`)}
+function symRow(s){
+  return open({sheet:'symptom',id:s.id},`<span class="ti">${ic('pulse',18)}</span><div class="grow"><div class="t">${esc(s.name)}</div><div class="s">${s.start?fd(s.start):'—'} – ${s.end?fd(s.end):'în curs'}</div><div class="chips" style="margin-top:6px">${s.intensity?chip(esc(s.intensity),s.intensity==='Sever'?'bad':s.intensity==='Moderat'?'warn':''):''}${(s.conditionIds||[]).map(i=>cname(i)).filter(Boolean).map(n=>chip(esc(n),'m')).join('')}</div></div>${ic('chev',18)}`)}
+function medStatus(m){const t=todayS();return m.start&&m.start>t?['Programat','warn']:(!m.end||m.end>=t)?['În curs','ok']:['Încheiat','']}
+function medRow(m){
+  const st=medStatus(m);
+  return open({sheet:'med',id:m.id},`<span class="ti">${ic('pill',18)}</span><div class="grow"><div class="t">${esc(m.name)}</div><div class="s">${esc([m.dose,m.frequency].filter(Boolean).join(' · ')||'Dozaj nespecificat')}</div><div class="s">${m.start?fd(m.start):'—'} – ${m.end?fd(m.end):'în curs'}</div><div class="chips" style="margin-top:6px">${chip(st[0],st[1])}${(m.conditionIds||[]).map(i=>cname(i)).filter(Boolean).map(n=>chip(esc(n),'m')).join('')}</div></div>${ic('chev',18)}`)}
+function reportRow(r){
+  const ls=reportLabs(r.id),fl=ls.filter(l=>flag(l.v,l.lo,l.hi)).length;
+  return open({t:'labreport',id:r.id},`${dbox(r.date)}<div class="grow"><div class="t">Analize de laborator</div><div class="s">${esc(fname(r.facilityId)||'Unitate nespecificată')} · ${ls.length} parametri</div><div class="chips" style="margin-top:6px">${fl?chip(fl+' în afara intervalului','bad'):chip('În interval','ok')}</div></div>${ic('chev',18)}`)}
+function vaxRow(v){
+  const lab={efectuat:['Efectuat','ok'],programat:['Programat','m'],restant:['Restant','warn'],recomandat:['Recomandat','']}[v.status]||['',''];
+  return open({sheet:'vax',id:v.id},`<div class="grow"><div class="t">${esc(v.name)}</div><div class="s">${esc(v.age||'')}${v.note?' · '+esc(v.note):''}</div></div>${chip((v.date?fd(v.date)+' · ':'')+lab[0],lab[1])}`)}
+function docCard(d){return `<button class="doc" data-act="doc" data-id="${d.id}"><div class="th" data-th="${d.id}">${ic(d.type==='pdf'?'pdf':'img',34)}<span class="chip ft">${d.type==='pdf'?'PDF':'Poză'}</span></div><div class="tx"><b>${esc(d.name)}</b><span class="sub">${fd(d.date)} · ${esc(d.tag||'')}</span></div></button>`}
+function noteRow(n){return open({note:n.id},`<div class="grow"><div class="t">${n.pin?ic('star',14)+' ':''}${esc(n.title)}</div><div class="s">${fd(n.date)}</div><p class="sub" style="margin-top:4px;color:var(--ink)">${esc((n.text||'').slice(0,110))}${(n.text||'').length>110?'…':''}</p></div>`)}
+function upRow(u){
+  return `<div class="row up">${dbox(u.date)}<button class="grow rowbtn" data-act="open" data-v="${J(u.go)}"><div class="t">${esc(u.title)}</div><div class="s">${fd(u.date)} · ${esc(u.sub||u.kind)}</div></button>${u.ct?calAnchor(u.ct,u.cid):''}</div>`}
+
+/* ───── start ───── */
+function vWelcome(){
+  return `<div class="card"><h1 style="font-size:26px;margin-bottom:8px">Bine ai venit</h1><p class="sub" style="margin-bottom:14px">Jurnal medical pentru familie. Datele rămân pe acest dispozitiv. Începe cu primul profil sau încarcă date de exemplu ca să vezi cum arată.</p>
+    <div style="display:flex;flex-direction:column;gap:8px"><button class="btn" data-act="add" data-type="person">${ic('user',18)}Creează primul profil</button><button class="btn ghost" data-act="demo">${ic('spark',18)}Încarcă date de exemplu</button><button class="btn ghost" data-act="restorepick">${ic('upload',18)}Restaurează dintr-o copie de rezervă</button></div></div>`}
+
+/* ───── profil ───── */
+function vProfil(){
+  const p=person(),q=p,gp=get('doctors',p.gpId),pid=p.id;
+  const vis=mine('visits').filter(v=>v.status==='efectuată').sort(cmpDateDesc),conds=mine('conditions'),act=conds.filter(condActive),meds=mine('meds'),medAct=meds.filter(medActive);
+  const vx=mine('vaccines'),done=vx.filter(v=>v.status==='efectuat').length,od=vx.filter(v=>v.status==='restant').length,labs=mine('labreports'),fl=flaggedNow(pid);
+  const up=upcoming(pid).slice(0,3),g=mine('measures').sort(cmpDateDesc),gl=g.find(x=>x.height!=null||x.weight!=null);
+  const alerts=[];if(od)alerts.push(chip(ic('alert',13)+od+' vaccin restant','warn'));if(fl.length)alerts.push(chip(ic('alert',13)+fl.length+' valori în afara intervalului','bad'));
+  const tile=(go,ico,t,meta)=>`<button class="tile" data-act="open" data-v="${J(go)}"><span class="ti">${ic(ico)}</span><b>${t}</b><span class="meta">${meta}</span></button>`;
+  const sp=usedSpecs(pid).size;
+  return `<div class="card"><div class="hero"><span class="av lg">${esc(p.name[0]||'?')}</span><div style="min-width:0"><h1>${esc(p.name)}</h1><div class="sub">${esc([p.rel,ageText(p),p.born?'născut'+(p.sex==='M'?'':'ă')+' '+fd(p.born):''].filter(Boolean).join(' · '))}</div></div></div>
+    ${alerts.length?`<div class="chips" style="margin-top:12px">${alerts.join('')}</div>`:''}</div>
+  <div class="card"><h2>Fișă rapidă<span class="grow"></span>${editBtn('person',pid)}</h2><div class="qk">
+    <div class="it"><span class="lbl">Grupa sanguină</span><b>${esc(p.blood||'—')}</b></div>
+    <div class="it"><span class="lbl">Alergii</span><b>${(p.allergies||[]).length?p.allergies.map(esc).join('; '):'Nicio alergie notată'}</b></div>
+    <div class="it"><span class="lbl">Afecțiuni active</span><div class="chips">${act.length?act.map(c=>`<button class="chip m lnkchip" data-act="open" data-v="${J({t:'condition',id:c.id})}">${esc(c.name)}</button>`).join(''):'<b>Niciuna</b>'}</div></div>
+    <div class="it"><span class="lbl">Medicamente în curs</span><div class="chips">${medAct.length?medAct.map(m=>`<button class="chip lnkchip" data-act="open" data-v="${J({sheet:'med',id:m.id})}">${esc(m.name)}</button>`).join(''):'<b>Niciunul</b>'}</div></div>
+    <div class="it"><span class="lbl">Medic de familie</span>${gp?lnk({t:'doctor',id:gp.id},gp.name):'<b>—</b>'}</div></div></div>
+  <div class="card"><h2>Ce urmează<span class="grow"></span><button class="btn ghost sm" data-act="open" data-v="${J({t:'reminders'})}">Toate</button></h2>${up.length?`<div class="list">${up.map(upRow).join('')}</div>`:'<div class="sub">Nimic programat. Planifică o vizită sau adaugă un reminder.</div>'}
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">${btnAdd('visit','Planifică vizită',{status:'planificată',date:addDays(todayS(),14)})}${btnAdd('reminder','Reminder')}</div></div>
+  <div class="tiles">
+    ${tile({t:'conditions'},'heart','Afecțiuni',conds.length+' în total · '+act.length+' active')}
+    ${tile({t:'visits'},'cross','Vizite',vis.length+' efectuate'+(vis[0]?' · ultima '+fd(vis[0].date):''))}
+    ${tile({t:'symptoms'},'pulse','Simptome',mine('symptoms').length+' episoade')}
+    ${tile({t:'meds'},'pill','Medicamente',medAct.length+' în curs · '+meds.length+' în total')}
+    ${tile({t:'labs'},'flask','Analize',labs.length+' rapoarte'+(fl.length?' · '+fl.length+' de urmărit':''))}
+    ${tile({t:'vaccines'},'syringe','Vaccinuri',vx.length?done+' din '+vx.length+' efectuate'+(od?' · '+od+' restant':''):'Niciun vaccin')}
+    ${tile({t:'docs'},'file','Documente',mine('docs').length+' fișiere (poze, PDF)')}
+    ${tile({t:'growth'},'ruler',isChild(p)?'Creștere și măsurători':'Măsurători',gl?g.length+' înregistrări':'Nicio măsurătoare')}
+    ${tile({t:'specs'},'layers','Pe specialitate',sp+' specialități folosite')}
+    ${tile({t:'notes'},'note','Note',mine('notes').length+' note')}
+    ${tile({t:'doctors'},'stetho','Medici',DB.doctors.length+' în agendă')}
+    ${tile({t:'facilities'},'building','Unități medicale',DB.facilities.length+' în agendă')}
+    ${tile({t:'costs'},'wallet','Costuri','Cheltuieli medicale')}
+  </div>`}
+
+/* ───── afecțiuni ───── */
+function vConditions(){
+  const l=mine('conditions').slice().sort((a,b)=>cmpDateDesc({date:a.start},{date:b.start}));if(!l.length)return emptyCard('Nicio afecțiune notată. Adaugă prima afecțiune, apoi leag-o de vizite, analize, simptome și medicamente.');
+  return grp('Active',l.filter(condActive),condRow)+grp('Încheiate',l.filter(c=>!condActive(c)),condRow)}
+function vCondition(v){
+  const c=get('conditions',v.id);if(!c)return emptyCard('Afecțiunea nu mai există.');
+  const has=x=>(x.conditionIds||[]).indexOf(c.id)>=0,pf={conditionIds:[c.id]};
+  const vs=mine('visits',c.personId).filter(has).sort(cmpDateDesc),sy=mine('symptoms',c.personId).filter(has),ms=mine('meds',c.personId).filter(has),rp=mine('labreports',c.personId).filter(has).sort(cmpDateDesc),ds=mine('docs',c.personId).filter(has).sort(cmpDateDesc),ns=mine('notes',c.personId).filter(has);
+  return `<div class="card"><div class="chips">${condActive(c)?chip('Activă','ok'):chip('Încheiată')}${c.chronic?chip('Cronică','m'):''}${c.specialty?`<button class="chip m lnkchip" data-act="open" data-v="${J({t:'spec',name:c.specialty})}">${esc(c.specialty)}</button>`:''}</div>
+    <div class="kv" style="margin-top:12px">${kvRow('Debut',c.start?fd(c.start):'')}${kvRow('Încheiere',c.end?fd(c.end):'în curs')}${kvRow('Durată',c.start?durText(c.start,c.end||todayS()):'')}</div>
+    ${c.notes?`<div class="sep"></div><p>${esc(c.notes)}</p>`:''}<div style="margin-top:12px">${editBtn('condition',c.id)}</div></div>
+   ${sect('Vizite',vs.length,btnAdd('visit','Vizită',pf),vs.length?`<div class="list">${vs.map(x=>visitRow(x)).join('')}</div>`:'<div class="sub">Nicio vizită legată.</div>')}
+   ${sect('Simptome',sy.length,btnAdd('symptom','Simptom',pf),sy.length?`<div class="list">${sy.map(symRow).join('')}</div>`:'<div class="sub">Niciun simptom legat.</div>')}
+   ${sect('Analize',rp.length,btnAdd('labreport','Analize',pf),rp.length?`<div class="list">${rp.map(reportRow).join('')}</div>`:'<div class="sub">Nicio analiză legată.</div>')}
+   ${sect('Medicamente',ms.length,btnAdd('med','Medicament',pf),ms.length?`<div class="list">${ms.map(medRow).join('')}</div>`:'<div class="sub">Niciun medicament legat.</div>')}
+   ${ds.length?sect('Documente',ds.length,'',`<div class="docs">${ds.map(docCard).join('')}</div>`):''}${ns.length?sect('Note',ns.length,'',`<div class="list">${ns.map(noteRow).join('')}</div>`):''}`}
+function durText(a,b){const d=Math.round((D(b)-D(a))/864e5);if(d<31)return d+' zile';if(d<730)return Math.round(d/30.4)+' luni';return nf(d/365.25,1)+' ani'}
+
+/* ───── vizite ───── */
+function vVisits(){
+  const l=mine('visits'),t=todayS();if(!l.length)return emptyCard('Nicio vizită. Adaugă o vizită trecută sau planifică una.');
+  return grp('Planificate',l.filter(v=>v.status==='planificată').sort(cmpDateAsc),v=>visitRow(v))+grp('Efectuate',l.filter(v=>v.status==='efectuată').sort(cmpDateDesc),v=>visitRow(v))+grp('Anulate',l.filter(v=>v.status==='anulată').sort(cmpDateDesc),v=>visitRow(v))}
+function vVisit(v){
+  const x=get('visits',v.id);if(!x)return emptyCard('Vizita nu mai există.');
+  const d=get('doctors',x.doctorId),f=get('facilities',x.facilityId),sp=Array.from(specsOf('visit',x))[0]||'';
+  const pf={visitId:x.id,conditionIds:x.conditionIds||[]};
+  const sy=mine('symptoms',x.personId).filter(s=>s.visitId===x.id),ms=mine('meds',x.personId).filter(m=>m.visitId===x.id),rp=mine('labreports',x.personId).filter(r=>r.visitId===x.id),ds=mine('docs',x.personId).filter(y=>y.visitId===x.id);
+  const rem=DB.reminders.find(r=>r.refType==='visit'&&r.refId===x.id);
+  return `<div class="card"><div class="lbl">${fd(x.date)}${x.time?' · '+esc(x.time):''}</div><h2 style="font-size:22px;margin:4px 0 8px">${esc(x.reason||(x.types||[]).join(', ')||'Vizită')}</h2>
+    <div class="chips">${x.status==='planificată'?chip('Planificată','warn'):x.status==='anulată'?chip('Anulată','bad'):chip('Efectuată','ok')}${sp?`<button class="chip m lnkchip" data-act="open" data-v="${J({t:'spec',name:sp})}">${esc(sp)}</button>`:''}${(x.types||[]).map(t=>chip(esc(t))).join('')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${editBtn('visit',x.id)}${x.status==='planificată'?`<button class="btn sm" data-act="markdone" data-id="${x.id}">${ic('check',14)}Marchează efectuată</button>${calAnchor('visit',x.id)}`:''}</div></div>
+   <div class="card"><div class="kv">${kvRow('Medic',d?lnk({t:'doctor',id:d.id},d.name):'')}${kvRow('Unitate',f?lnk({t:'facility',id:f.id},f.name):'')}${kvRow('Cost',x.cost!=null?'<b>'+money(x.cost)+'</b>'+(x.costNote?' · '+esc(x.costNote):''):'')}</div>
+    ${x.diagnosis?`<div class="sep"></div><div class="lbl">Diagnostic</div><p>${esc(x.diagnosis)}</p>`:''}${x.treatment?`<div class="sep"></div><div class="lbl">Tratament recomandat</div><p style="white-space:pre-wrap">${esc(x.treatment)}</p>`:''}${x.notes?`<div class="sep"></div><div class="lbl">Concluzii și note</div><p style="white-space:pre-wrap">${esc(x.notes)}</p>`:''}
+    ${(x.conditionIds||[]).length?`<div class="sep"></div><div class="lbl">Afecțiuni legate</div><div class="chips" style="margin-top:6px">${condChips(x.conditionIds)}</div>`:''}</div>
+   ${x.next?`<div class="card"><h2>Următorul control</h2><div class="row" style="border:0;padding:0">${dbox(x.next)}<div class="grow"><div class="t">${fd(x.next)}</div></div>${rem?calAnchor('reminder',rem.id):''}</div></div>`:''}
+   ${sect('Analize',rp.length,btnAdd('labreport','Analize',pf),rp.length?`<div class="list">${rp.map(reportRow).join('')}</div>`:'<div class="sub">Nicio analiză legată.</div>')}
+   ${sect('Medicamente prescrise',ms.length,btnAdd('med','Medicament',pf),ms.length?`<div class="list">${ms.map(medRow).join('')}</div>`:'<div class="sub">Niciun medicament legat.</div>')}
+   ${sect('Simptome',sy.length,btnAdd('symptom','Simptom',pf),sy.length?`<div class="list">${sy.map(symRow).join('')}</div>`:'<div class="sub">Niciun simptom legat.</div>')}
+   ${sect('Documente',ds.length,btnAdd('doc','Document',pf),ds.length?`<div class="docs">${ds.map(docCard).join('')}</div>`:'<div class="sub">Niciun document atașat.</div>')}`}
+
+/* ───── simptome, medicamente ───── */
+function vSymptoms(){const l=mine('symptoms');if(!l.length)return emptyCard('Niciun simptom. Notează episoade (cu început și sfârșit), nu zilnic.');
+  const cmp=(a,b)=>(b.start||'')<(a.start||'')?-1:1;return grp('În curs',l.filter(s=>!s.end||s.end>=todayS()).sort(cmp),symRow)+grp('Încheiate',l.filter(s=>s.end&&s.end<todayS()).sort(cmp),symRow)}
+function vMeds(){const l=mine('meds');if(!l.length)return emptyCard('Niciun medicament. Notează tratamentele cu dozaj, frecvență și perioadă.');
+  const cmp=(a,b)=>(b.start||'')<(a.start||'')?-1:1;return grp('În curs',l.filter(m=>medStatus(m)[0]==='În curs').sort(cmp),medRow)+grp('Programate',l.filter(m=>medStatus(m)[0]==='Programat').sort(cmp),medRow)+grp('Încheiate',l.filter(m=>medStatus(m)[0]==='Încheiat').sort(cmp),medRow)}
+
+/* ───── analize ───── */
+function vLabs(){
+  const pid=S.pid,ps=paramsOf(pid),rs=mine('labreports').sort(cmpDateDesc);if(!rs.length)return emptyCard('Nicio analiză. Adaugă un raport de analize cu valorile de pe buletin.');
+  return (ps.length?`<div class="card"><h2>Evoluție pe parametru</h2><div class="list">${ps.map(n=>{const s=seriesOf(pid,n),l=s[s.length-1],f=flag(l.v,l.lo,l.hi);
+    return open({t:'param',n},`<div class="grow"><div class="t">${esc(n)}</div><div class="s num">${nv(l.v)} ${esc(l.u)}${refText(l.lo,l.hi)?' · ref. '+refText(l.lo,l.hi):''}</div><div style="margin-top:4px">${f?chip(f==='low'?'Sub interval':'Peste interval','bad'):chip('În interval','ok')}</div></div>${s.length>1?spark(s,l.lo,l.hi):''}`)}).join('')}</div></div>`:'')+
+   `<div class="year">Rapoarte</div><div class="list">${rs.map(reportRow).join('')}</div>`}
+function vLabreport(v){
+  const r=get('labreports',v.id);if(!r)return emptyCard('Raportul nu mai există.');const ls=reportLabs(r.id).sort((a,b)=>a.param.localeCompare(b.param,'ro')),vi=get('visits',r.visitId),ds=mine('docs',r.personId).filter(d=>d.reportId===r.id);
+  return `<div class="card"><div class="lbl">${fd(r.date)}</div><h2 style="font-size:21px;margin:4px 0 8px">Analize de laborator</h2>
+    <div class="kv">${kvRow('Unitate',r.facilityId?lnk({t:'facility',id:r.facilityId},fname(r.facilityId)):'')}${kvRow('Vizită',vi?lnk({t:'visit',id:vi.id},vlabel(vi)):'')}${kvRow('Specialitate',Array.from(specsOf('report',r)).map(esc).join(', '))}</div>
+    ${(r.conditionIds||[]).length?`<div class="chips" style="margin-top:10px">${condChips(r.conditionIds)}</div>`:''}${r.notes?`<div class="sep"></div><p>${esc(r.notes)}</p>`:''}<div style="margin-top:12px">${editBtn('labreport',r.id)}</div></div>
+   <div class="card"><h2>Valori</h2><div class="list">${ls.map(l=>{const f=flag(l.v,l.lo,l.hi);return open(l.v!=null?{t:'param',n:l.param}:{t:'labreport',id:r.id},`<div class="grow"><div class="t">${esc(l.param)}</div><div class="s num">${refText(l.lo,l.hi)?'ref. '+refText(l.lo,l.hi)+' ':''}${esc(l.u||'')}</div></div><div style="text-align:right"><b class="num" style="font-size:17px">${l.v!=null?nv(l.v):esc(l.vt)}</b><div>${f?chip(f==='low'?'▼ sub':'▲ peste','bad'):l.v!=null?chip('În interval','ok'):''}</div></div>`)}).join('')||'<div class="sub">Nicio valoare introdusă.</div>'}</div></div>
+   ${sect('Documente',ds.length,btnAdd('doc','Document',{reportId:r.id,visitId:r.visitId,tag:'Analize'}),ds.length?`<div class="docs">${ds.map(docCard).join('')}</div>`:'<div class="sub">Niciun buletin atașat.</div>')}`}
+function vParam(v){
+  const s=seriesOf(S.pid,v.n);if(!s.length)return emptyCard('Nu există valori.');const l=s[s.length-1];
+  const c=tsChart(s,{lo:l.lo,hi:l.hi,key:'p_'+v.n,label:'Evoluția '+v.n}),f=flag(c.sel.v,c.sel.lo,c.sel.hi);
+  return `<div class="card"><div class="lbl">Ultima valoare</div><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><b class="num" style="font-family:var(--font-display);font-size:34px">${nv(l.v)}</b><span class="sub">${esc(l.u)}${refText(l.lo,l.hi)?' · ref. '+refText(l.lo,l.hi):''}</span>${flag(l.v,l.lo,l.hi)?chip('în afara intervalului','bad'):chip('în interval','ok')}</div>
+    ${c.svg}<div class="readout num"><b>${fd(c.sel.d)}</b> · ${nv(c.sel.v)} ${esc(c.sel.u)}${f?' · <b style="color:var(--bad)">'+(f==='low'?'sub':'peste')+' interval</b>':''}</div>
+    <div class="sub" style="margin-top:8px">Intervalul de referință e cel de pe buletin, salvat odată cu fiecare rezultat. Laboratoarele diferite pot avea intervale diferite.</div></div>
+   <div class="card"><h2>Toate valorile</h2><div class="list">${s.slice().reverse().map(x=>{const ff=flag(x.v,x.lo,x.hi),lb=DB.labs.find(z=>z.id===x.id);return open({t:'labreport',id:lb?lb.reportId:''},`<div class="grow"><div class="t num">${fd(x.d)}</div></div><b class="num" style="${ff?'color:var(--bad)':''}">${nv(x.v)} ${esc(x.u)}${ff?(ff==='low'?' ▼':' ▲'):''}</b>${ic('chev',16)}`)}).join('')}</div></div>`}
+
+/* ───── vaccinuri, documente, creștere, note ───── */
+function vVaccines(){
+  const l=mine('vaccines');const c=s=>l.filter(v=>v.status===s).length;
+  return `<div class="card"><div class="chips">${chip(c('efectuat')+' efectuate','ok')}${chip(c('restant')+' restante','warn')}${chip((c('programat')+c('recomandat'))+' urmează','m')}</div>
+   <div class="callout warn" style="margin-top:12px">${ic('info')}<div>Starea („restant”, „recomandat”) o stabilești tu, după schema oficială și medicul de familie. Aplicația nu o calculează.</div></div></div>
+   ${grp('Restante',l.filter(v=>v.status==='restant'),vaxRow)}${grp('Programate',l.filter(v=>v.status==='programat').sort(cmpDateAsc),vaxRow)}${grp('Recomandate',l.filter(v=>v.status==='recomandat'),vaxRow)}${grp('Efectuate',l.filter(v=>v.status==='efectuat').sort(cmpDateDesc),vaxRow)}`}
+function vDocs(){
+  const all=mine('docs').sort(cmpDateDesc),tags=['Toate'].concat(Array.from(new Set(all.map(f=>f.tag).filter(Boolean))));
+  const l=S.docf==='Toate'?all:all.filter(f=>f.tag===S.docf);
+  return `<div class="fchips">${tags.map(t=>`<button class="fc" aria-pressed="${S.docf===t}" data-act="docf" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div>${l.length?`<div class="docs">${l.map(docCard).join('')}</div>`:emptyCard('Niciun document. Adaugă poze sau PDF-uri (buletine, rețete, bilete de ieșire).')}`}
+function vGrowth(){
+  const p=person(),g=mine('measures').sort(cmpDateAsc);if(!g.length)return emptyCard('Nicio măsurătoare încă.');
+  const kinds=[['h','Înălțime','height','cm'],['w','Greutate','weight','kg']];if(g.some(x=>x.pulse!=null))kinds.push(['p','Puls','pulse','bpm']);if(g.some(x=>x.sys!=null))kinds.push(['s','Tensiune sist.','sys','mmHg'],['d','Tensiune diast.','dia','mmHg']);
+  if(!kinds.some(k=>k[0]===S.gr))S.gr='h';
+  const kd=kinds.find(k=>k[0]===S.gr),pts=g.filter(x=>x[kd[2]]!=null).map(x=>({date:x.date,d:x.date,v:x[kd[2]],u:kd[3]}));
+  let chart='',ro='',stats='',note='';
+  if(!pts.length)chart='<div class="sub">Nicio valoare pentru acest indicator.</div>';
+  else if((kd[0]==='h'||kd[0]==='w')&&hasBands(p,pts)){const c=growthChart(kd[0],pts,p);chart=c.svg;ro=`<b>${fd(c.sel.d)}</b> · ${nf(c.sel.a)} ani · ${nf(c.sel.v)} ${kd[3]} · aprox. percentila P${pctOf(kd[0],c.sel.a,c.sel.v)}`;
+    note=`<div class="callout warn" style="margin-top:10px">${ic('info')}<div>Curbele P3, P50 și P97 sunt orientative. Versiunea următoare folosește tabelele oficiale OMS.</div></div>`}
+  else{const c=tsChart(pts,{key:'gr_'+kd[0],label:'Evoluție '+kd[1]});chart=c.svg;ro=`<b>${fd(c.sel.d)}</b> · ${nf(c.sel.v)} ${kd[3]}`;
+    if(isChild(p)&&(kd[0]==='h'||kd[0]==='w'))note=`<div class="callout" style="margin-top:10px">${ic('info')}<div>Curbele de percentile sunt disponibile doar pentru fete între 2 și 9 ani, deocamdată.</div></div>`}
+  const hw=g.filter(x=>x.height!=null&&x.weight!=null);
+  if(hw.length){const L=hw[hw.length-1],t0=+D(L.date)-365*864e5,P0=hw.reduce((a,b)=>Math.abs(+D(b.date)-t0)<Math.abs(+D(a.date)-t0)?b:a),dt=(+D(L.date)-+D(P0.date))/(365*864e5);
+    stats=`<div class="tiles" style="margin-top:12px"><div class="tile flat"><span class="lbl">Ultima măsurătoare</span><b class="num">${nf(L.height)} cm · ${nf(L.weight)} kg</b><span class="meta">${fd(L.date)}</span></div>
+     <div class="tile flat"><span class="lbl">IMC</span><b class="num">${nf(L.weight/Math.pow(L.height/100,2))} kg/m²</b><span class="meta">${isChild(p)?'la copii se interpretează pe percentile':'din ultimele valori'}</span></div>
+     ${dt>0.5?`<div class="tile flat"><span class="lbl">Ritm, ultimul an</span><b class="num">${nf((L.height-P0.height)/dt)} cm / an</b><span class="meta">${nf((L.weight-P0.weight)/dt)} kg / an</span></div>`:''}</div>`}
+  return `<div class="card"><div class="seg" role="group">${kinds.map(k=>`<button aria-pressed="${S.gr===k[0]}" data-act="gk" data-v="${k[0]}">${k[1]}</button>`).join('')}</div><div style="margin-top:10px">${chart}</div>${ro?`<div class="readout num">${ro}</div>`:''}${note}${stats}</div>
+   <div class="card"><h2>Înregistrări</h2><div class="list">${g.slice().reverse().map(x=>open({sheet:'measure',id:x.id},`<div class="grow"><div class="t num">${fd(x.date)}</div><div class="s num">${[x.height!=null?nf(x.height)+' cm':'',x.weight!=null?nf(x.weight)+' kg':'',x.pulse!=null?'puls '+nf(x.pulse,0):'',x.sys!=null?'TA '+nf(x.sys,0)+'/'+nf(x.dia,0):''].filter(Boolean).join(' · ')}</div></div>${x.source&&x.source!=='manual'?chip(esc(x.source)):''}${ic('chev',16)}`)).join('')}</div></div>`}
+function vNotes(){const l=mine('notes').sort((a,b)=>((b.pin?1:0)-(a.pin?1:0))||cmpDateDesc(a,b));return l.length?`<div class="list">${l.map(noteRow).join('')}</div>`:emptyCard('Nicio notă.')}
+
+/* ───── medici, unități, specialități ───── */
+function vDoctors(){
+  return `<div class="callout">${ic('info')}<div>Agenda de medici e comună pentru toată familia. Alegi un medic dintr-o listă când adaugi o vizită.</div></div>
+   <div class="list">${DB.doctors.slice().sort(cmpName).map(d=>{const n=DB.visits.filter(v=>v.doctorId===d.id).length;return open({t:'doctor',id:d.id},`<span class="av">${esc(d.name.replace('Dr. ','')[0]||'?')}</span><div class="grow"><div class="t">${esc(d.name)}</div><div class="s">${esc((d.specialties||[]).join(', ')||'Fără specialitate')}${(d.facilityIds||[]).length?' · '+esc((d.facilityIds||[]).map(fname).filter(Boolean).join(', ')):''}</div></div>${chip(n+' vizite')}`)}).join('')||emptyCard('Niciun medic în agendă.')}</div>`}
+function vDoctor(v){
+  const d=get('doctors',v.id);if(!d)return emptyCard('Medicul nu mai există.');const vs=DB.visits.filter(x=>x.doctorId===d.id).sort(cmpDateDesc),cost=vs.filter(x=>x.status==='efectuată'&&x.cost!=null).reduce((a,x)=>a+x.cost,0);
+  return `<div class="card"><div class="hero"><span class="av lg">${esc(d.name.replace('Dr. ','')[0]||'?')}</span><div style="min-width:0"><h2 style="font-size:22px;margin:0">${esc(d.name)}</h2><div class="chips" style="margin-top:6px">${(d.specialties||[]).map(s=>`<button class="chip m lnkchip" data-act="open" data-v="${J({t:'spec',name:s})}">${esc(s)}</button>`).join('')}</div></div></div>
+   <div class="sep"></div><div class="kv">${kvRow('Unități',(d.facilityIds||[]).map(id=>lnk({t:'facility',id},fname(id))).join('<br>'))}${kvRow('Telefon','<span style="user-select:all">'+esc(d.phone||'')+'</span>')}${kvRow('E-mail',esc(d.email||''))}${kvRow('Medic de familie pentru',DB.persons.filter(p=>p.gpId===d.id).map(p=>esc(p.name)).join(', '))}${kvRow('Cost total vizite',cost?money(cost):'')}</div>${d.notes?`<div class="sep"></div><p>${esc(d.notes)}</p>`:''}<div style="margin-top:12px">${editBtn('doctor',d.id)}</div></div>
+   ${sect('Vizite',vs.length,'',vs.length?`<div class="list">${vs.map(x=>visitRow(x,true)).join('')}</div>`:'<div class="sub">Nicio vizită.</div>')}`}
+function vFacilities(){return `<div class="list">${DB.facilities.slice().sort(cmpName).map(f=>{const n=DB.visits.filter(v=>v.facilityId===f.id).length+DB.labreports.filter(v=>v.facilityId===f.id).length;return open({t:'facility',id:f.id},`<span class="ti">${ic('building',18)}</span><div class="grow"><div class="t">${esc(f.name)}</div><div class="s">${esc([f.kind,f.city].filter(Boolean).join(' · '))}</div></div>${chip(n+' înreg.')}`)}).join('')||emptyCard('Nicio unitate medicală în agendă.')}</div>`}
+function vFacility(v){
+  const f=get('facilities',v.id);if(!f)return emptyCard('Unitatea nu mai există.');const vs=DB.visits.filter(x=>x.facilityId===f.id).sort(cmpDateDesc),rp=DB.labreports.filter(x=>x.facilityId===f.id).sort(cmpDateDesc),dr=DB.doctors.filter(d=>(d.facilityIds||[]).indexOf(f.id)>=0);
+  return `<div class="card"><h2 style="font-size:22px;margin:0 0 6px">${esc(f.name)}</h2><div class="chips">${chip(esc(f.kind||'Unitate'),'m')}</div><div class="sep"></div>
+   <div class="kv">${kvRow('Localitate',esc(f.city||''))}${kvRow('Adresă',esc(f.address||''))}${kvRow('Telefon','<span style="user-select:all">'+esc(f.phone||'')+'</span>')}</div>${f.notes?`<div class="sep"></div><p>${esc(f.notes)}</p>`:''}<div style="margin-top:12px">${editBtn('facility',f.id)}</div></div>
+   ${dr.length?sect('Medici',dr.length,'',`<div class="list">${dr.map(d=>open({t:'doctor',id:d.id},`<div class="grow"><div class="t">${esc(d.name)}</div><div class="s">${esc((d.specialties||[]).join(', '))}</div></div>${ic('chev',16)}`)).join('')}</div>`):''}
+   ${sect('Vizite',vs.length,'',vs.length?`<div class="list">${vs.map(x=>visitRow(x,true)).join('')}</div>`:'<div class="sub">Nicio vizită.</div>')}
+   ${rp.length?sect('Analize',rp.length,'',`<div class="list">${rp.map(reportRow).join('')}</div>`):''}`}
+function vSpecs(){
+  const pid=S.pid,used=usedSpecs(pid),names=Array.from(new Set(META.specialties.concat(Array.from(used))));
+  const rows=names.map(n=>({n,d:specData(pid,n)})),a=rows.filter(r=>r.d.total>0).sort((x,y)=>y.d.total-x.d.total),b=rows.filter(r=>r.d.total===0);
+  const row=r=>open({t:'spec',name:r.n},`<span class="ti">${ic('layers',18)}</span><div class="grow"><div class="t">${esc(r.n)}</div><div class="s">${r.d.conditions.length} afecțiuni · ${r.d.visits.length} vizite · ${r.d.reports.length} analize · ${r.d.meds.length} medicamente</div></div>${ic('chev',16)}`);
+  return `<div class="callout">${ic('info')}<div>Alege o specialitate ca să vezi tot ce ai legat de ea: afecțiuni, vizite, analize, simptome, medicamente și costuri.</div></div>${a.length?`<div class="list">${a.map(row).join('')}</div>`:''}
+   ${b.length?`<details class="more"><summary>Alte specialități (${b.length})</summary><div class="list" style="margin-top:8px">${b.map(row).join('')}</div></details>`:''}`}
+function vSpec(v){
+  const pid=S.pid,sp=v.name,d=specData(pid,sp),pf={specialty:sp};
+  const cnt=(n,l)=>`<div class="tile flat"><b class="num">${n}</b><span class="meta">${l}</span></div>`;
+  return `<div class="card"><div class="lbl">Specialitate · ${esc(person().name)}</div><h2 style="font-size:24px;margin:4px 0 12px">${esc(sp)}</h2>
+    <div class="tiles">${cnt(d.conditions.length,'afecțiuni')}${cnt(d.visits.length,'vizite')}${cnt(d.reports.length,'rapoarte de analize')}${cnt(d.symptoms.length,'simptome')}${cnt(d.meds.length,'medicamente')}${cnt(money(d.cost),'cheltuit pe vizite')}</div></div>
+   ${sect('Afecțiuni',d.conditions.length,btnAdd('condition','Afecțiune',pf),d.conditions.length?`<div class="list">${d.conditions.map(condRow).join('')}</div>`:'<div class="sub">Nicio afecțiune.</div>')}
+   ${sect('Vizite',d.visits.length,btnAdd('visit','Vizită',pf),d.visits.length?`<div class="list">${d.visits.map(x=>visitRow(x)).join('')}</div>`:'<div class="sub">Nicio vizită.</div>')}
+   ${sect('Analize',d.reports.length,btnAdd('labreport','Analize',pf),d.reports.length?`<div class="list">${d.reports.map(reportRow).join('')}</div>`:'<div class="sub">Nicio analiză legată de această specialitate.</div>')}
+   ${sect('Simptome',d.symptoms.length,'',d.symptoms.length?`<div class="list">${d.symptoms.map(symRow).join('')}</div>`:'<div class="sub">Niciun simptom.</div>')}
+   ${sect('Medicamente',d.meds.length,'',d.meds.length?`<div class="list">${d.meds.map(medRow).join('')}</div>`:'<div class="sub">Niciun medicament.</div>')}
+   ${d.docs.length?sect('Documente',d.docs.length,'',`<div class="docs">${d.docs.map(docCard).join('')}</div>`):''}${d.notes.length?sect('Note',d.notes.length,'',`<div class="list">${d.notes.map(noteRow).join('')}</div>`):''}
+   ${sect('Medici',d.doctors.length,'',d.doctors.length?`<div class="list">${d.doctors.map(x=>open({t:'doctor',id:x.id},`<div class="grow"><div class="t">${esc(x.name)}</div><div class="s">${esc((x.facilityIds||[]).map(fname).filter(Boolean).join(', '))}</div></div>${ic('chev',16)}`)).join('')}</div>`:'<div class="sub">Niciun medic cu această specialitate.</div>')}
+   ${d.facilities.length?sect('Unități folosite',d.facilities.length,'',`<div class="list">${d.facilities.map(f=>open({t:'facility',id:f.id},`<span class="ti">${ic('building',18)}</span><div class="grow"><div class="t">${esc(f.name)}</div></div>${ic('chev',16)}`)).join('')}</div>`):''}`}
+
+/* ───── remindere și costuri ───── */
+function vReminders(){
+  const up=upcoming(S.pid),past=mine('reminders').filter(r=>r.date<todayS()).sort(cmpDateDesc).slice(0,10);
+  return `<div class="callout">${ic('cal')}<div>Reminderele sunt evenimente în Google Calendar: apeși „Adaugă în Google Calendar”, iar Calendarul se deschide cu evenimentul completat. ${META.genericCal?'Titlul e generic (fără detalii medicale), cum ai setat în Setări.':'Titlul conține detaliile introduse.'}</div></div>
+   ${up.length?`<div class="list">${up.map(upRow).join('')}</div>`:emptyCard('Nimic programat.')}${past.length?`<div class="year">Trecute</div><div class="list">${past.map(r=>open({sheet:'reminder',id:r.id},`${dbox(r.date)}<div class="grow"><div class="t">${esc(r.title)}</div><div class="s">${esc(r.kind||'')}</div></div>`)).join('')}</div>`:''}`}
+function vCosts(){
+  const pids=S.costFam?DB.persons.map(p=>p.id):[S.pid],c=costStats(pids);
+  const arr=o=>Object.keys(o).map(k=>({label:k,val:Math.round(o[k]*100)/100})).sort((a,b)=>b.val-a.val);
+  const years=Object.keys(c.byYear).sort().map(y=>({label:y,val:Math.round(c.byYear[y]*100)/100}));
+  return `<div class="seg" role="group"><button aria-pressed="${!S.costFam}" data-act="costfam" data-v="0">${esc(person().name)}</button><button aria-pressed="${S.costFam}" data-act="costfam" data-v="1">Toată familia</button></div>
+   <div class="tiles"><div class="tile"><span class="lbl">Cheltuit (efectuate)</span><b class="num">${money(c.total)}</b><span class="meta">${c.done.length} vizite cu cost</span></div><div class="tile"><span class="lbl">Estimat (planificate)</span><b class="num">${money(c.planned)}</b><span class="meta">${c.plan.length} vizite planificate</span></div></div>
+   ${years.length?`<div class="card"><h2>Pe ani</h2>${bars(years,money)}</div>`:''}${Object.keys(c.bySpec).length?`<div class="card"><h2>Pe specialitate</h2>${bars(arr(c.bySpec),money)}</div>`:''}${Object.keys(c.byType).length?`<div class="card"><h2>Pe tip de serviciu</h2>${bars(arr(c.byType),money)}<div class="sub" style="margin-top:6px">Costul unei vizite cu mai multe tipuri se împarte egal între ele.</div></div>`:''}
+   ${c.done.length?`<div class="year">Cele mai recente cheltuieli</div><div class="list">${c.done.slice(0,15).map(v=>visitRow(v,S.costFam)).join('')}</div>`:emptyCard('Nicio vizită cu cost. Completează costul la vizite.')}`}
+
+/* ───── istoric ───── */
+function filtered(){
+  const f=S.f,ids=f.fam?DB.persons.map(p=>p.id):[S.pid];let ev=events(ids);
+  if(f.type!=='all')ev=ev.filter(e=>e.type===f.type);
+  if(f.spec!=='all')ev=ev.filter(e=>e.specs.indexOf(f.spec)>=0);
+  if(f.doc!=='all')ev=ev.filter(e=>e.doctorId===f.doc);
+  if(f.cond!=='all')ev=ev.filter(e=>(e.conditionIds||[]).indexOf(f.cond)>=0);
+  if(f.period!=='all'){const lim=new Date();lim.setFullYear(lim.getFullYear()-(f.period==='1y'?1:3));ev=ev.filter(e=>D(e.date)>=lim)}
+  const toks=norm(f.q).split(/\s+/).filter(Boolean).map(t=>t.length>5?t.slice(0,t.length-2):t);
+  if(toks.length)ev=ev.filter(e=>{const h=norm([e.title,e.sub,e.text,e.specs.join(' '),dname(e.doctorId),(e.conditionIds||[]).map(cname).join(' ')].join(' '));return toks.every(t=>h.indexOf(t)>=0)});
+  return ev}
+function tlResults(){
+  const ev=filtered();if(!ev.length)return emptyCard('Niciun rezultat. Încearcă alt cuvânt sau scoate un filtru.');
+  let y='',h='';ev.forEach(e=>{const yy=(e.date||'').slice(0,4);if(yy!==y){y=yy;h+=`<div class="year">${yy}</div>`}const t=EV_TYPES[e.type]||['','file'];
+    h+=open(Object.assign({},e.go,{pid:e.pid}),`<span class="ti">${ic(t[1],18)}</span><div class="grow"><div class="t">${esc(e.title)}</div><div class="s">${esc(e.sub)}</div></div><div style="text-align:right;flex:none"><div class="sub num">${fd(e.date)}</div>${S.f.fam?chip(esc(pname(e.pid))):''}</div>`)});
+  return `<div class="sub">${ev.length} rezultate</div><div class="list">${h}</div>`}
+function vIstoric(){
+  const f=S.f,evs=events([S.pid]),specs=Array.from(new Set([].concat.apply([],evs.map(e=>e.specs)))).sort((a,b)=>a.localeCompare(b,'ro'));
+  const docs=Array.from(new Set(evs.map(e=>e.doctorId).filter(Boolean))).map(id=>get('doctors',id)).filter(Boolean),conds=mine('conditions');
+  return `<div class="search"><span>${ic('search')}</span><input type="search" id="q" placeholder="Caută: medic, diagnostic, analiză, notă…" value="${esc(f.q)}" autocomplete="off" aria-label="Caută în istoric"></div>
+   <div class="fchips"><button class="fc" aria-pressed="${f.type==='all'}" data-act="ftype" data-v="all">Toate</button>${Object.keys(EV_TYPES).map(k=>`<button class="fc" aria-pressed="${f.type===k}" data-act="ftype" data-v="${k}">${EV_TYPES[k][0]}</button>`).join('')}</div>
+   <div class="two"><label class="f">Specialitate<select id="fs"><option value="all">Toate</option>${specs.map(s=>`<option ${f.spec===s?'selected':''}>${esc(s)}</option>`).join('')}</select></label>
+   <label class="f">Medic<select id="fdoc"><option value="all">Toți</option>${docs.map(d=>`<option value="${d.id}" ${f.doc===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select></label></div>
+   <div class="two"><label class="f">Afecțiune<select id="fcond"><option value="all">Toate</option>${conds.map(c=>`<option value="${c.id}" ${f.cond===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
+   <label class="f">Perioadă<select id="fp"><option value="all" ${f.period==='all'?'selected':''}>Tot istoricul</option><option value="1y" ${f.period==='1y'?'selected':''}>Ultimul an</option><option value="3y" ${f.period==='3y'?'selected':''}>Ultimii 3 ani</option></select></label></div>
+   <div><button class="fc" aria-pressed="${f.fam}" data-act="ffam">Toată familia</button></div>
+   <div id="tlres" style="display:flex;flex-direction:column;gap:10px">${tlResults()}</div>`}
+
+/* ───── analiză ───── */
+function vAnaliza(){
+  const pid=S.pid,p=person(),ins=insights(pid),vs=mine('visits').filter(v=>v.status==='efectuată'),k={};vs.forEach(v=>{const s=Array.from(specsOf('visit',v))[0]||'Fără specialitate';k[s]=(k[s]||0)+1});
+  const yrsK={};vs.forEach(v=>{const y=(v.date||'').slice(0,4);yrsK[y]=(yrsK[y]||0)+1});
+  const tool=(go,ico,t,s)=>`<button class="tile" data-act="open" data-v="${J(go)}"><span class="ti">${ic(ico)}</span><b>${t}</b><span class="meta">${s}</span></button>`;
+  return `<div class="card"><h2>Observații automate</h2><div class="sub" style="margin-bottom:10px">Calculate local din datele lui ${esc(p.name)}. Nu sunt diagnostic.</div>
+    <div class="list">${ins.length?ins.map(i=>`<button class="ins ${i.k}" data-act="open" data-v="${J(i.go)}"><span class="ib">${ic(i.k==='ok'?'check':i.k==='info'?'info':'alert',16)}</span><span style="flex:1;font-size:14px">${esc(i.t)}</span></button>`).join(''):'<div class="sub">Nimic de semnalat încă. Adaugă date și apar aici.</div>'}</div></div>
+   <div class="tiles">${tool({t:'growth'},'ruler','Creștere și măsurători','Grafice, percentile, ritm')}${tool({t:'labs'},'flask','Evoluția analizelor','Față de intervalul de referință')}${tool({t:'specs'},'layers','Pe specialitate','Tot ce ai la o specialitate')}${tool({t:'costs'},'wallet','Costuri','Pe ani, specialități, servicii')}${tool({t:'vaccines'},'syringe','Calendar de vaccinare','Efectuate, restante, următoare')}${tool({t:'reminders'},'cal','Remindere','Evenimente în Google Calendar')}</div>
+   ${Object.keys(k).length?`<div class="card"><h2>Vizite pe specialitate</h2>${bars(Object.keys(k).map(s=>({label:s,val:k[s]})).sort((a,b)=>b.val-a.val))}</div>`:''}
+   ${Object.keys(yrsK).length?`<div class="card"><h2>Vizite pe ani</h2>${bars(Object.keys(yrsK).sort().map(y=>({label:y,val:yrsK[y]})))}</div>`:''}`}
+
+/* ───── export și AI ───── */
+function scoped(pid){
+  const e=S.ex;let lim=null;if(e.period!=='all'){lim=new Date();lim.setFullYear(lim.getFullYear()-(e.period==='1y'?1:3))}
+  const inP=d=>!lim||!d||D(d)>=lim,okSpec=(t,x)=>e.spec==='all'||inSpec(t,x,e.spec);
+  return {p:get('persons',pid),conds:mine('conditions',pid).filter(c=>okSpec('condition',c)&&(!lim||!c.end||D(c.end)>=lim)),
+    meds:mine('meds',pid).filter(m=>okSpec('med',m)&&(!lim||!m.end||D(m.end)>=lim)),vizite:mine('visits',pid).filter(v=>inP(v.date)&&okSpec('visit',v)&&v.status!=='anulată').sort(cmpDateDesc),
+    syms:mine('symptoms',pid).filter(s=>inP(s.start)&&okSpec('symptom',s)),reports:mine('labreports',pid).filter(r=>inP(r.date)&&okSpec('report',r)).sort(cmpDateAsc),
+    grow:mine('measures',pid).filter(g=>inP(g.date)).sort(cmpDateAsc),vax:mine('vaccines',pid),notes:mine('notes',pid).filter(n=>inP(n.date)&&okSpec('note',n)),docs:mine('docs',pid).filter(d=>inP(d.date)&&okSpec('doc',d))}}
+const STAT_V={'efectuată':'efectuată','planificată':'planificată','anulată':'anulată'};
+function paramSeries(s){const m={};s.reports.forEach(r=>reportLabs(r.id).forEach(l=>{if(l.v!=null){(m[l.param]=m[l.param]||[]).push(l)}}));Object.keys(m).forEach(k=>m[k].sort(cmpDateAsc));return m}
+function pdfHtml(){
+  const s=scoped(S.pid),p=s.p,e=S.ex.sec;
+  let h=`<div class="paper"><h3>Fișă medicală · ${esc(p.name)}</h3><div style="color:#555">${esc([ageText(p),p.born?'născut'+(p.sex==='M'?'':'ă')+' '+fd(p.born):'',S.ex.spec!=='all'?'specialitate: '+S.ex.spec:'','generat '+fd(todayS())].filter(Boolean).join(' · '))}</div>`;
+  if(e.fisa)h+=`<h4>Fișă rapidă</h4><table><tr><th>Grupa sanguină</th><td>${esc(p.blood||'—')}</td></tr><tr><th>Alergii</th><td>${(p.allergies||[]).map(esc).join('; ')||'—'}</td></tr><tr><th>Afecțiuni active</th><td>${mine('conditions').filter(condActive).map(c=>esc(c.name)).join('; ')||'—'}</td></tr><tr><th>Medicamente în curs</th><td>${mine('meds').filter(medActive).map(m=>esc(m.name+(m.dose?' ('+m.dose+(m.frequency?', '+m.frequency:'')+')':''))).join('; ')||'—'}</td></tr><tr><th>Medic de familie</th><td>${esc(dname(p.gpId)||'—')}</td></tr></table>`;
+  if(e.afectiuni)h+=`<h4>Afecțiuni</h4><table>${s.conds.map(c=>`<tr><td style="width:34%"><b>${esc(c.name)}</b></td><td>${esc(c.specialty||'')}<br>${c.start?fd(c.start):'—'} – ${c.end?fd(c.end):'în curs'}${c.chronic?' · cronică':''}${c.notes?'<br>'+esc(c.notes):''}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
+  if(e.medicamente)h+=`<h4>Medicamente</h4><table>${s.meds.map(m=>`<tr><td style="width:34%"><b>${esc(m.name)}</b></td><td>${esc([m.dose,m.frequency].filter(Boolean).join(', '))}<br>${m.start?fd(m.start):'—'} – ${m.end?fd(m.end):'în curs'}${(m.conditionIds||[]).length?'<br>pentru: '+esc((m.conditionIds||[]).map(cname).filter(Boolean).join(', ')):''}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
+  if(e.vizite)h+=`<h4>Vizite la medic</h4><table>${s.vizite.map(v=>`<tr><td style="width:70px">${fd(v.date)}</td><td><b>${esc(v.reason||(v.types||[]).join(', ')||'Vizită')}</b>${v.status==='planificată'?' (planificată)':''}<br>${esc([dname(v.doctorId),(Array.from(specsOf('visit',v))[0]||''),fname(v.facilityId)].filter(Boolean).join(' · '))}${v.diagnosis?'<br>Diagnostic: '+esc(v.diagnosis):''}${v.treatment?'<br>Tratament: '+esc(v.treatment):''}${v.notes?'<br>'+esc(v.notes):''}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
+  if(e.simptome)h+=`<h4>Simptome</h4><table>${s.syms.map(x=>`<tr><td style="width:34%"><b>${esc(x.name)}</b></td><td>${x.start?fd(x.start):'—'} – ${x.end?fd(x.end):'în curs'}${x.intensity?' · '+esc(x.intensity):''}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
+  if(e.analize){const ps=paramSeries(s);h+=`<h4>Analize (evoluție)</h4><table><tr><th>Parametru</th><th>Valori în timp</th><th>Ref.</th></tr>${Object.keys(ps).sort((a,b)=>a.localeCompare(b,'ro')).map(n=>{const a=ps[n],l=a[a.length-1];return `<tr><td>${esc(n)}</td><td>${a.map(x=>fmy(x.date)+': '+nv(x.v)).join(' → ')} ${esc(l.u||'')}</td><td>${refText(l.lo,l.hi)}</td></tr>`}).join('')||'<tr><td colspan="3">—</td></tr>'}</table>`}
+  if(e.crestere)h+=`<h4>Măsurători</h4><table><tr><th>Data</th><th>Înălțime</th><th>Greutate</th><th>Puls</th><th>TA</th></tr>${s.grow.slice(-6).map(g=>`<tr><td>${fd(g.date)}</td><td>${g.height!=null?nf(g.height)+' cm':''}</td><td>${g.weight!=null?nf(g.weight)+' kg':''}</td><td>${g.pulse!=null?nf(g.pulse,0):''}</td><td>${g.sys!=null?nf(g.sys,0)+'/'+nf(g.dia,0):''}</td></tr>`).join('')}</table>`;
+  if(e.vaccin)h+=`<h4>Vaccinuri</h4><table>${s.vax.map(v=>`<tr><td>${esc(v.name)}</td><td>${v.date?fd(v.date):'—'}</td><td>${esc(v.status)}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
+  if(e.note)h+=`<h4>Note</h4>${s.notes.map(n=>`<p><b>${esc(n.title)}</b> (${fd(n.date)}) ${esc(n.text)}</p>`).join('')||'—'}`;
+  if(e.docs)h+=`<h4>Anexe (${s.docs.length})</h4>${s.docs.map(d=>d.type==='img'?`<div class="anx" data-anx="${d.id}"><div class="sk">${esc(d.name)} · ${fd(d.date)}</div></div>`:`<div class="sk">${esc(d.name)} · ${fd(d.date)} (PDF, se atașează separat)</div>`).join('')}`;
+  return h+`<div class="foot">Generat din Jurnal medical de familie. Informații introduse de utilizator.</div></div>`}
+const PRESETS={trend:'Rezumă evoluția analizelor din perioada selectată și spune ce valori merită discutate cu medicul.',vizita:'Pe baza istoricului, pregătește-mi o listă scurtă de întrebări pentru următoarea vizită.',restante:'Verifică dacă sunt controale, vaccinuri sau analize restante, pe baza datelor din dosar.',crestere:'Analizează evoluția creșterii și a măsurătorilor și spune dacă ritmul pare să se schimbe.',medicamente:'Verifică lista de medicamente și afecțiuni și spune ce întrebări să pun medicului despre tratament.'};
+function aiPackage(){
+  const s=scoped(S.pid),p=s.p,e=S.ex,sec=e.sec,an=e.anon;
+  const who=an?`Pacient A (${p.sex==='M'?'bărbat':p.sex==='F'?'femeie/fată':'persoană'}, ${ageText(p)})`:`${p.name}, ${ageText(p)}${p.born?', născut'+(p.sex==='M'?'':'ă')+' '+p.born:''}`;
+  const dn=id=>{const d=get('doctors',id);return d?(an?(d.specialties||[]).join('/'):d.name+', '+(d.specialties||[]).join('/')):''};
+  const o={pacient:who,perioada:e.period==='all'?'tot istoricul':e.period==='1y'?'ultimul an':'ultimii 3 ani',data_export:todayS()};
+  if(sec.fisa)o.fisa_rapida={grupa_sanguina:p.blood,alergii:p.allergies};
+  if(sec.afectiuni)o.afectiuni=s.conds.map(c=>({nume:c.name,specialitate:c.specialty,debut:c.start,final:c.end,cronica:c.chronic,note:c.notes}));
+  if(sec.medicamente)o.medicamente=s.meds.map(m=>({nume:m.name,descriere:m.description,dozaj:m.dose,frecventa:m.frequency,inceput:m.start,final:m.end,pentru:(m.conditionIds||[]).map(cname),note:m.notes}));
+  if(sec.simptome)o.simptome=s.syms.map(x=>({nume:x.name,inceput:x.start,final:x.end,intensitate:x.intensity,afectiuni:(x.conditionIds||[]).map(cname)}));
+  if(sec.vizite)o.vizite=s.vizite.map(v=>({data:v.date,stare:v.status,medic:dn(v.doctorId),specialitate:Array.from(specsOf('visit',v))[0]||'',tipuri:v.types,motiv:v.reason,diagnostic:v.diagnosis,tratament_recomandat:v.treatment,concluzii:v.notes,afectiuni:(v.conditionIds||[]).map(cname),urmator_control:v.next}));
+  if(sec.analize){const ps=paramSeries(s);o.analize=Object.keys(ps).map(n=>{const a=ps[n],l=a[a.length-1];return {parametru:n,unitate:l.u,referinta:refText(l.lo,l.hi),valori:a.map(x=>({data:x.date,valoare:x.v}))}})}
+  if(sec.crestere)o.masuratori=s.grow.map(g=>({data:g.date,inaltime_cm:g.height,greutate_kg:g.weight,puls:g.pulse,tensiune:g.sys!=null?g.sys+'/'+g.dia:null}));
+  if(sec.vaccin)o.vaccinuri=s.vax.map(v=>({vaccin:v.name,varsta_recomandata:v.age,data:v.date,stare:v.status}));
+  if(sec.note)o.note=s.notes.map(n=>({data:n.date,titlu:n.title,text:n.text}));
+  const task=PRESETS[e.preset]+' Răspunde în română. Nu pune diagnostic; sugerează ce să discut cu medicul.';
+  if(e.fmt==='json')return JSON.stringify(Object.assign({sarcina:task},o),null,1);
+  const L=(a,f)=>a&&a.length?a.map(f).join('\n'):'-';let t=`# Dosar medical\nPacient: ${o.pacient}\nPerioadă: ${o.perioada}\n`;
+  if(o.fisa_rapida)t+=`\n## Fișă rapidă\n- Grupa sanguină: ${p.blood||'—'}\n- Alergii: ${(p.allergies||[]).join('; ')||'—'}\n`;
+  if(o.afectiuni)t+=`\n## Afecțiuni\n${L(o.afectiuni,c=>`- ${c.nume} (${c.specialitate||'-'}) ${c.debut||'?'} – ${c.final||'în curs'}${c.cronica?', cronică':''}${c.note?'. '+c.note:''}`)}\n`;
+  if(o.medicamente)t+=`\n## Medicamente\n${L(o.medicamente,m=>`- ${m.nume}: ${[m.dozaj,m.frecventa].filter(Boolean).join(', ')||'-'} | ${m.inceput||'?'} – ${m.final||'în curs'}${m.pentru&&m.pentru.length?' | pentru: '+m.pentru.join(', '):''}`)}\n`;
+  if(o.simptome)t+=`\n## Simptome\n${L(o.simptome,x=>`- ${x.nume}: ${x.inceput||'?'} – ${x.final||'în curs'}${x.intensitate?' ('+x.intensitate+')':''}`)}\n`;
+  if(o.vizite)t+=`\n## Vizite\n${L(o.vizite,v=>`- ${v.data} | ${v.stare} | ${[v.medic,v.specialitate].filter(Boolean).join(', ')} | ${v.motiv||''} | diagnostic: ${v.diagnostic||'-'} | tratament: ${v.tratament_recomandat||'-'} | ${v.concluzii||''}`)}\n`;
+  if(o.analize)t+=`\n## Analize\n${L(o.analize,a=>`- ${a.parametru} (${a.unitate||''}, ref. ${a.referinta||'-'}): ${a.valori.map(v=>v.data+'='+nv(v.valoare)).join('; ')}`)}\n`;
+  if(o.masuratori)t+=`\n## Măsurători\n${L(o.masuratori,g=>`- ${g.data}: ${[g.inaltime_cm!=null?nf(g.inaltime_cm)+' cm':'',g.greutate_kg!=null?nf(g.greutate_kg)+' kg':'',g.puls!=null?'puls '+g.puls:'',g.tensiune?'TA '+g.tensiune:''].filter(Boolean).join(', ')}`)}\n`;
+  if(o.vaccinuri)t+=`\n## Vaccinuri\n${L(o.vaccinuri,v=>`- ${v.vaccin} (${v.varsta_recomandata||''}): ${v.data||'—'} [${v.stare}]`)}\n`;
+  if(o.note)t+=`\n## Note\n${L(o.note,n=>`- ${n.data} ${n.titlu}: ${n.text}`)}\n`;
+  return t+`\n---\nSarcină: ${task}\n`}
+const chkb=(k,t,x)=>`<label class="chk"><input type="checkbox" data-act="exsec" data-k="${k}" ${S.ex.sec[k]?'checked':''}><span>${t}${x?`<span class="sub" style="display:block">${x}</span>`:''}</span></label>`;
+function vExport(){
+  const e=S.ex,p=person();
+  const scope=`<div class="card"><h2>Ce să includ</h2>${chkb('fisa','Fișa rapidă','Grupă sanguină, alergii, afecțiuni active, medicamente în curs')}${chkb('afectiuni','Afecțiuni')}${chkb('medicamente','Medicamente')}${chkb('vizite','Vizite la medic')}${chkb('analize','Analize')}${chkb('vaccin','Vaccinuri')}${chkb('crestere','Măsurători și creștere')}${chkb('simptome','Simptome')}${chkb('note','Note')}${chkb('docs','Documente ca anexe','Pozele apar în PDF, fișierele PDF se listează')}
+    <div class="two" style="margin-top:10px"><label class="f">Perioadă<select id="exp"><option value="1y" ${e.period==='1y'?'selected':''}>Ultimul an</option><option value="3y" ${e.period==='3y'?'selected':''}>Ultimii 3 ani</option><option value="all" ${e.period==='all'?'selected':''}>Tot istoricul</option></select></label>
+    <label class="f">Specialitate<select id="exs"><option value="all">Toate</option>${META.specialties.map(s=>`<option ${e.spec===s?'selected':''}>${esc(s)}</option>`).join('')}</select></label></div></div>`;
+  let panel='';
+  if(e.seg==='pdf')panel=`<div class="card"><h2>PDF pentru medic</h2><p class="sub" style="margin-bottom:12px">O fișă curată cu ce ai bifat mai sus, pentru <b>${esc(p.name)}</b>. În previzualizare apeși „Tipărește / Salvează PDF”.</p><button class="btn block" data-act="pdf">${ic('file',18)}Previzualizează PDF-ul</button></div>`;
+  if(e.seg==='ai')panel=`<div class="card"><h2>Pachet pentru AI-ul tău</h2><p class="sub" style="margin-bottom:12px">Aplicația pregătește un text. Îl copiezi și îl lipești tu în AI-ul pe care îl folosești. <b>Nimic nu pleacă automat din aplicație.</b> Odată lipit, textul ajunge la furnizorul acelui AI.</p>
+    <label class="chk"><input type="checkbox" data-act="anon" ${e.anon?'checked':''}><span>Anonimizează<span class="sub" style="display:block">Fără nume și fără medici pe nume, doar vârsta și specialitățile</span></span></label>
+    <div class="two"><label class="f">Format<select id="exf"><option value="md" ${e.fmt==='md'?'selected':''}>Text (Markdown)</option><option value="json" ${e.fmt==='json'?'selected':''}>JSON</option></select></label>
+    <label class="f">Întrebare<select id="exq">${Object.keys(PRESETS).map(k=>`<option value="${k}" ${e.preset===k?'selected':''}>${({trend:'Evoluția analizelor',vizita:'Întrebări pentru medic',restante:'Restanțe',crestere:'Creștere și măsurători',medicamente:'Medicamente'})[k]}</option>`).join('')}</select></label></div>
+    <pre class="out" id="pkg" tabindex="0">${esc(aiPackage())}</pre><div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap"><button class="btn" data-act="copy">${ic('copy',16)}Copiază</button><span class="sub num">${aiPackage().split(/\s+/).length} cuvinte</span></div></div>`;
+  if(e.seg==='api')panel=`<div class="card"><h2>AI direct în aplicație</h2><div class="callout">${ic('spark')}<div>Urmează în etapa 3, împreună cu extragerea automată a valorilor din buletine. Va folosi cheia ta API, iar datele vor pleca de pe telefon către furnizorul ales, la fiecare întrebare. Până atunci folosește „Pachet AI”.</div></div></div>`;
+  return `<div class="seg" role="group" aria-label="Tip export"><button aria-pressed="${e.seg==='pdf'}" data-act="seg" data-v="pdf">PDF medic</button><button aria-pressed="${e.seg==='ai'}" data-act="seg" data-v="ai">Pachet AI</button><button aria-pressed="${e.seg==='api'}" data-act="seg" data-v="api">AI direct</button></div>${scope}${panel}`}
+
+/* ───── setări ───── */
+const sw=(k,on)=>`<button class="sw" role="switch" aria-checked="${on}" data-act="sw" data-k="${k}" aria-label="Comutator"></button>`;
+function vSetari(){
+  return `<div class="card"><h2>Profiluri</h2><div class="list">${DB.persons.map(p=>`<div class="row"><span class="av" style="--mc:var(--m${memberColor(p)})">${esc(p.name[0]||'?')}</span><div class="grow"><div class="t">${esc(p.name)}</div><div class="s">${esc([p.rel,ageText(p)].filter(Boolean).join(' · '))}</div></div>${editBtn('person',p.id)}</div>`).join('')}</div><button class="btn ghost block" style="margin-top:10px" data-act="add" data-type="person">${ic('plus',16)}Adaugă profil</button></div>
+   <div class="card"><h2>Specialități</h2><div class="chips">${META.specialties.map((s,i)=>`<span class="chip">${esc(s)}<button class="chx" data-act="specdel" data-i="${i}" aria-label="Șterge ${esc(s)}">${ic('x',12)}</button></span>`).join('')}</div>
+    <form class="inl" data-inl="spec"><input type="text" name="v" placeholder="Specialitate nouă" autocomplete="off"><button class="btn sm" type="submit">Adaugă</button></form></div>
+   <div class="card"><h2>Tipuri de investigații și servicii</h2><div class="chips">${META.visitTypes.map((s,i)=>`<span class="chip">${esc(s)}<button class="chx" data-act="typedel" data-i="${i}" aria-label="Șterge ${esc(s)}">${ic('x',12)}</button></span>`).join('')}</div>
+    <form class="inl" data-inl="type"><input type="text" name="v" placeholder="Tip nou" autocomplete="off"><button class="btn sm" type="submit">Adaugă</button></form></div>
+   <div class="card"><h2>Calendar și cost</h2><div class="setrow"><div><div class="t">Titluri generice în Calendar</div><div class="sub">„Control – Ilinca”, fără motiv sau diagnostic</div></div>${sw('genericCal',META.genericCal)}</div>
+    <div class="sep"></div><label class="f" style="margin:0">Moneda<select id="cur"><option ${META.currency==='RON'?'selected':''}>RON</option><option ${META.currency==='EUR'?'selected':''}>EUR</option><option ${META.currency==='USD'?'selected':''}>USD</option></select></label></div>
+   <div class="card"><h2>Copie de rezervă ${ic('dl',18)}</h2><p class="sub" style="margin-bottom:10px">Un fișier cu toate datele și documentele de pe acest dispozitiv. Păstrează-l într-un loc sigur, pentru că nu e criptat în această versiune.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="backup">${ic('dl',16)}Exportă tot</button><button class="btn ghost" data-act="restorepick">${ic('upload',16)}Restaurează</button></div><p class="sub" id="stor" style="margin-top:10px"></p></div>
+   <div class="card"><h2>Instalare</h2><div class="sub">iPhone: în Safari, Partajează, apoi „Adaugă pe ecranul principal”.<br>Android: în Chrome, meniul ⋮, apoi „Instalează aplicația”.<br>Laptop: în Chrome sau Edge, pictograma de instalare din bara de adrese.</div></div>
+   <div class="card"><h2>Ce urmează în aplicație</h2><ul class="road"><li><b>Etapa 2:</b> sincronizare prin Google Drive între telefoane și laptop, cu criptare opțională cu parola comună.</li><li><b>Etapa 3:</b> scanarea documentelor și extragerea valorilor din analize, cu confirmarea ta, plus AI direct cu cheia ta.</li><li><b>Mai târziu:</b> date de la ceas (Garmin / Google Health), dacă se poate fără server.</li></ul><div class="sub" style="margin-top:8px">Versiunea ${VERSION}</div></div>
+   <div class="card"><h2>Date de pe acest dispozitiv</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-act="demo">Încarcă date de exemplu</button><button class="btn ghost danger" data-act="wipeask">${ic('trash',16)}Șterge tot</button></div></div>`}
+
+/* ───── detalii în panouri ───── */
+function openDetail(kind,id){
+  const g=(t)=>get(t,id);let rec,title='',body='',type=kind;
+  if(kind==='symptom'){rec=g('symptoms');if(!rec)return;title=rec.name;body=`<div class="kv">${kvRow('Perioadă',(rec.start?fd(rec.start):'—')+' – '+(rec.end?fd(rec.end):'în curs'))}${kvRow('Intensitate',esc(rec.intensity||''))}${kvRow('Vizită',rec.visitId?lnk({t:'visit',id:rec.visitId},vlabel(get('visits',rec.visitId)||{})):'')}</div>${(rec.conditionIds||[]).length?`<div class="chips" style="margin-top:10px">${condChips(rec.conditionIds)}</div>`:''}${rec.notes?`<div class="sep"></div><p>${esc(rec.notes)}</p>`:''}`}
+  if(kind==='med'){rec=g('meds');if(!rec)return;title=rec.name;const st=medStatus(rec);body=`<div class="chips">${chip(st[0],st[1])}</div><div class="kv" style="margin-top:10px">${kvRow('Descriere',esc(rec.description||''))}${kvRow('Dozaj',esc(rec.dose||''))}${kvRow('Frecvență',esc(rec.frequency||''))}${kvRow('Perioadă',(rec.start?fd(rec.start):'—')+' – '+(rec.end?fd(rec.end):'în curs'))}${kvRow('Prescris la',rec.visitId?lnk({t:'visit',id:rec.visitId},vlabel(get('visits',rec.visitId)||{})):'')}</div>${(rec.conditionIds||[]).length?`<div class="chips" style="margin-top:10px">${condChips(rec.conditionIds)}</div>`:''}${rec.notes?`<div class="sep"></div><p>${esc(rec.notes)}</p>`:''}`}
+  if(kind==='vax'){rec=g('vaccines');if(!rec)return;title=rec.name;body=`<div class="kv">${kvRow('Stare',esc(rec.status))}${kvRow('Data',rec.date?fd(rec.date):'')}${kvRow('Vârsta recomandată',esc(rec.age||''))}${kvRow('Note',esc(rec.note||''))}</div>${rec.status==='programat'&&rec.date?`<div style="margin-top:12px">${calAnchor('vax',rec.id)}</div>`:''}`;type='vax'}
+  if(kind==='measure'){rec=g('measures');if(!rec)return;title='Măsurători · '+fd(rec.date);body=`<div class="kv">${kvRow('Înălțime',rec.height!=null?nf(rec.height)+' cm':'')}${kvRow('Greutate',rec.weight!=null?nf(rec.weight)+' kg':'')}${kvRow('Puls',rec.pulse!=null?nf(rec.pulse,0)+' bpm':'')}${kvRow('Tensiune',rec.sys!=null?nf(rec.sys,0)+'/'+nf(rec.dia,0)+' mmHg':'')}${kvRow('Sursă',esc(rec.source||''))}${kvRow('Note',esc(rec.note||''))}</div>`}
+  if(kind==='reminder'){rec=g('reminders');if(!rec)return;title=rec.title;body=`<div class="kv">${kvRow('Data',fd(rec.date))}${kvRow('Tip',esc(rec.kind||''))}</div><div style="margin-top:12px">${calAnchor('reminder',rec.id)}</div>`;type=rec.refType==='visit'?null:'reminder'}
+  if(!rec)return;
+  openPanel(title,body+(type?`<div style="margin-top:14px">${editBtn(type,rec.id)}</div>`:''))}
+async function openDoc(id){
+  const f=get('docs',id);if(!f)return;const links=[];const v=get('visits',f.visitId),r=get('labreports',f.reportId);
+  if(v)links.push(lnk({t:'visit',id:v.id},vlabel(v)));if(r)links.push(lnk({t:'labreport',id:r.id},'Analize din '+fd(r.date)));
+  const b=await getBlob(id),url=b?URL.createObjectURL(b):'';let prev;
+  if(!b)prev='<div class="callout warn">Fișierul nu a fost găsit pe acest dispozitiv.</div>';
+  else if(/^image\//.test(b.type))prev=`<img src="${url}" alt="${esc(f.name)}" style="width:100%;border-radius:10px;background:#fff">`;
+  else prev=`<div class="callout">${ic('pdf')}<div>Document PDF, ${nf(b.size/1048576,1)} MB.</div></div>`;
+  const ext=b&&/pdf/.test(b.type)?'.pdf':b&&/svg/.test(b.type)?'.svg':b&&/png/.test(b.type)?'.png':'.jpg';
+  openPanel(f.name,`${prev}<div class="kv" style="margin-top:14px">${kvRow('Data',fd(f.date))}${kvRow('Tip',esc(f.tag||''))}${kvRow('Legat de',links.join('<br>'))}${kvRow('Afecțiuni',condChips(f.conditionIds))}</div>
+   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${b?`<a class="btn sm" href="${url}" target="_blank" rel="noopener">${ic('file',14)}Deschide</a><a class="btn ghost sm" href="${url}" download="${esc(f.name)}${ext}">${ic('dl',14)}Descarcă</a>`:''}${editBtn('doc',f.id)}</div>`,true)}
+function openNote(id){const n=get('notes',id);if(!n)return;openPanel(n.title,`<div class="sub">${fd(n.date)}</div><p style="margin-top:10px;white-space:pre-wrap">${esc(n.text)}</p>${(n.conditionIds||[]).length?`<div class="chips" style="margin-top:10px">${condChips(n.conditionIds)}</div>`:''}<div style="margin-top:14px">${editBtn('note',n.id)}</div>`)}
+
+/* ───── router și desen ───── */
+const ROOTS=['profil','istoric','analiza','export','setari'];
+const TITLES={conditions:['Afecțiuni',['condition','Afecțiune']],visits:['Vizite la medic',['visit','Vizită']],symptoms:['Simptome',['symptom','Simptom']],meds:['Medicamente',['med','Medicament']],labs:['Analize',['labreport','Analize']],vaccines:['Vaccinuri',['vax','Vaccin']],docs:['Documente',['doc','Document']],growth:[null,['measure','Măsurători']],notes:['Note',['note','Notă']],doctors:['Medici',['doctor','Medic']],facilities:['Unități medicale',['facility','Unitate']],specs:['Pe specialitate',null],costs:['Costuri',null],reminders:['Remindere',['reminder','Reminder']],condition:['Afecțiune',null],visit:['Vizită',null],labreport:['Raport de analize',null],param:[null,null],doctor:['Medic',null],facility:['Unitate medicală',null],spec:[null,null]};
+function route(v){
+  if(!DB.persons.length)return {root:1,html:vWelcome(),welcome:1};
+  const M={profil:vProfil,istoric:vIstoric,analiza:vAnaliza,export:vExport,setari:vSetari,conditions:vConditions,condition:vCondition,visits:vVisits,visit:vVisit,symptoms:vSymptoms,meds:vMeds,labs:vLabs,labreport:vLabreport,param:vParam,vaccines:vVaccines,docs:vDocs,growth:vGrowth,notes:vNotes,doctors:vDoctors,doctor:vDoctor,facilities:vFacilities,facility:vFacility,specs:vSpecs,spec:vSpec,reminders:vReminders,costs:vCosts};
+  const fn=M[v.t];if(!fn)return {root:1,html:vProfil()};
+  if(ROOTS.indexOf(v.t)>=0)return {root:1,html:fn(v)};
+  const T=TITLES[v.t]||[null,null];let title=T[0];if(v.t==='param')title=v.n;if(v.t==='spec')title=v.name;if(v.t==='growth')title=isChild(person())?'Creștere și măsurători':'Măsurători';
+  return {title:title||'',action:T[1],html:fn(v)}}
+function header(r){
+  if(r.welcome)return `<div class="top-row"><div class="brand"><span class="logo">${ic('cross',16)}</span>Jurnal medical</div></div>`;
+  if(r.root)return `<div class="top-row"><div class="brand"><span class="logo">${ic('cross',16)}</span>Jurnal medical</div><button class="sync" data-act="tab" data-v="setari" aria-label="Date salvate pe acest dispozitiv"><span class="dot"></span>Salvat pe dispozitiv</button></div>
+    <div class="members" role="group" aria-label="Alege profilul">${DB.persons.map(x=>`<button class="mem" aria-pressed="${x.id===S.pid}" data-act="person" data-id="${x.id}"><span class="av" style="--mc:var(--m${memberColor(x)})">${esc(x.name[0]||'?')}</span>${esc(x.name)}</button>`).join('')}<button class="mem" data-act="add" data-type="person" aria-label="Adaugă profil"><span class="av" style="--mc:var(--muted)">+</span>Profil</button></div>`;
+  return `<div class="top-row"><button class="iconbtn" data-act="back" aria-label="Înapoi">${ic('back')}</button><h1 class="pagetitle">${esc(r.title)}</h1>${r.action?`<button class="btn sm" data-act="add" data-type="${r.action[0]}">${ic('plus',16)}${esc(r.action[1])}</button>`:''}</div>`}
+const TABS=[['profil','Profil','home'],['istoric','Istoric','clock'],['analiza','Analiză','chart'],['export','Export','share'],['setari','Setări','sliders']];
+const THUMBS={};
+async function hydrateThumbs(){
+  for(const el of $$('[data-th]')){const id=el.dataset.th,d=get('docs',id);if(!d||d.type!=='img')continue;
+    try{let u=THUMBS[id];if(!u){const b=await getBlob(id);if(!b)continue;u=THUMBS[id]=URL.createObjectURL(b)}el.insertAdjacentHTML('afterbegin',`<img src="${u}" alt="" loading="lazy">`)}catch(e){}}}
+function render(keep){
+  if(S.pid&&!get('persons',S.pid))S.pid=DB.persons[0]?DB.persons[0].id:null;
+  if(!S.pid&&DB.persons.length)S.pid=DB.persons[0].id;
+  const v=S.nav.length?S.nav[S.nav.length-1]:{t:S.tab},r=route(v),p=person();
+  $('#app').dataset.c=String(p?memberColor(p):0);
+  $('#top').innerHTML=header(r)+(dbError?`<div class="demo bad">${ic('alert',16)}<span>${esc(dbError)}</span></div>`:'');
+  $('#main').innerHTML=r.html;
+  $('#tabs').innerHTML=r.welcome?'':TABS.map(t=>`<button class="tab" ${S.tab===t[0]?'aria-current="page"':''} data-act="tab" data-v="${t[0]}">${ic(t[2],22)}${t[1]}</button>`).join('');
+  $('.tabs').hidden=!!r.welcome;
+  if(!keep)window.scrollTo(0,0);
+  hydrateThumbs();
+  const st=$('#stor');if(st&&navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{const el=$('#stor');if(el)el.textContent='Spațiu folosit: '+nf((e.usage||0)/1048576,1)+' MB. '+(persisted?'Browserul a acceptat păstrarea permanentă a datelor.':'Browserul poate șterge datele dacă rămâne fără spațiu, de aceea fă copii de rezervă.')})}
+
+/* ═════ 50 · evenimente, istoric (butonul Înapoi), pornire ═════ */
+let HD=0,HSKIP=0,HPEND=0,HSCHED=false;
+function histPush(){try{history.pushState({jm:1},'');HD++}catch(e){}}
+function histPop(n){if(!n)return;HPEND+=n;if(HSCHED)return;HSCHED=true;Promise.resolve().then(()=>{HSCHED=false;const k=HPEND;HPEND=0;if(k>0&&HD>=k){HD-=k;HSKIP++;try{history.go(-k)}catch(e){}}})}
+window.addEventListener('popstate',()=>{
+  if(HSKIP>0){HSKIP--;return}
+  HD=Math.max(0,HD-1);
+  if(LAYERS.length){closePanel(true);return}
+  if(S.nav.length){S.nav.pop();render()}});
+
+function navPush(v){S.nav.push(v);histPush();render()}
+function navBack(){if(S.nav.length){S.nav.pop();histPop(1);render()}}
+function goTab(t){const n=S.nav.length;S.nav=[];S.tab=t;histPop(n);render()}
+
+function confirmPanel(title,text,act,data){
+  openPanel(title,`<p style="margin-bottom:14px">${esc(text)}</p><div class="fbtns"><button class="btn danger-solid block" data-act="${act}" ${Object.keys(data||{}).map(k=>`data-${k}="${esc(data[k])}"`).join(' ')}>${ic('trash',16)}Da, șterge</button><button class="btn ghost block" data-act="close">Renunț</button></div>`)}
+
+function openV(v,el){
+  if(v.sheet){openDetail(v.sheet,v.id);return}
+  if(v.note){openNote(v.note);return}
+  if(v.pid&&v.pid!==S.pid&&get('persons',v.pid)){S.pid=v.pid}
+  const go=Object.assign({},v);delete go.pid;
+  if(ROOTS.indexOf(go.t)>=0){goTab(go.t);return}
+  if(go.t==='labreport'&&!go.id)return;
+  navPush(go)}
+
+function afterDelete(type,id){
+  const n=S.nav.length;while(S.nav.length&&S.nav[S.nav.length-1].id===id)S.nav.pop();
+  let k=n-S.nav.length;
+  if(type==='person'){S.nav=[];k=n;S.pid=DB.persons[0]?DB.persons[0].id:null;S.tab='profil'}
+  histPop(k)}
+
+function pdfPanel(){
+  const el=openPanel('PDF pentru medic',`<div class="noprint" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><button class="btn" data-act="print">${ic('file',16)}Tipărește / Salvează PDF</button><span class="sub" style="align-self:center">În fereastra de tipărire alegi „Salvează ca PDF”.</span></div><div class="paperwrap">${pdfHtml()}</div>`,true);
+  $$('[data-anx]',el).forEach(async d=>{try{const b=await getBlob(d.dataset.anx);if(!b)return;const u=URL.createObjectURL(b);d.innerHTML=`<img src="${u}" alt="" style="max-width:100%;border:1px solid #ddd;margin:6px 0"><div class="sk0">${esc((get('docs',d.dataset.anx)||{}).name||'')}</div>`}catch(e){}})}
+
+function download(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+function pickFile(accept,cb){const i=document.createElement('input');i.type='file';i.accept=accept;i.onchange=()=>{if(i.files&&i.files[0])cb(i.files[0])};i.click()}
+
+async function copyText(t){
+  try{await navigator.clipboard.writeText(t);toast('Copiat. Lipește-l în AI-ul tău.');return}catch(e){}
+  const pre=$('#pkg');if(pre){const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);try{document.execCommand('copy');toast('Copiat.');return}catch(e){}}
+  toast('Nu am putut copia. Selectează textul și copiază-l manual.')}
+
+document.addEventListener('click',async ev=>{
+  const el=ev.target.closest('[data-act]');if(!el)return;
+  const a=el.dataset.act,d=el.dataset;
+  switch(a){
+    case 'open':openV(JSON.parse(d.v),el);break;
+    case 'add':{openForm(d.type,{prefill:d.prefill?JSON.parse(d.prefill):null});break}
+    case 'edit':openForm(d.type,{id:d.id});break;
+    case 'quick':{const f=d.for,q=d.q;openForm(q,{nested:true,onSaved:rec=>{if(rec)quickAdded(f,q,rec)}});break}
+    case 'close':closePanel();break;
+    case 'tab':goTab(d.v);break;
+    case 'back':navBack();break;
+    case 'person':S.pid=d.id;S.f.doc='all';S.f.cond='all';S.f.spec='all';render(true);break;
+    case 'doc':openDoc(d.id);break;
+    case 'docf':S.docf=d.v;render(true);break;
+    case 'gk':S.gr=d.v;S.sel={};render(true);break;
+    case 'selpt':S.sel[d.key]=+d.i;render(true);break;
+    case 'seg':S.ex.seg=d.v;render(true);break;
+    case 'exsec':S.ex.sec[d.k]=el.checked;render(true);break;
+    case 'anon':S.ex.anon=el.checked;render(true);break;
+    case 'ftype':S.f.type=d.v;render(true);break;
+    case 'ffam':S.f.fam=!S.f.fam;render(true);break;
+    case 'costfam':S.costFam=d.v==='1';render(true);break;
+    case 'pdf':pdfPanel();break;
+    case 'print':window.print();break;
+    case 'copy':copyText(aiPackage());break;
+    case 'sw':META[d.k]=!META[d.k];saveMeta();render(true);break;
+    case 'specdel':META.specialties.splice(+d.i,1);saveMeta();render(true);break;
+    case 'typedel':META.visitTypes.splice(+d.i,1);saveMeta();render(true);break;
+    case 'delask':{const f=el.closest('form');if(f)confirmPanel('Ștergi definitiv?','Elementul și legăturile lui vor fi șterse. Nu se poate anula.','delgo',{type:f.dataset.form,id:f.dataset.id});break}
+    case 'delgo':{const type=d.type,id=d.id;closeAllPanels();delEntity(type,id);afterDelete(type,id);render(true);toast('Șters');break}
+    case 'demo':{
+      if(DB.persons.length){openPanel('Încarci date de exemplu?',`<p style="margin-bottom:14px">Datele de exemplu se adaugă peste cele existente. Ca să le vezi separat, poți face înainte o copie de rezervă.</p><div class="fbtns"><button class="btn block" data-act="demogo">Încarcă</button><button class="btn ghost block" data-act="close">Renunț</button></div>`)}
+      else{loadDemo();S.pid=DB.persons[0].id;render();toast('Date de exemplu încărcate')}break}
+    case 'demogo':closeAllPanels();loadDemo();render();toast('Date de exemplu încărcate');break;
+    case 'backup':{try{const b=await exportAll();download(b,'jurnal-medical-'+todayS()+'.json');toast('Copia de rezervă a fost descărcată')}catch(e){toast('Eroare la export: '+e.message)}break}
+    case 'restorepick':pickFile('application/json,.json',async f=>{try{await importAll(await f.text());S.nav=[];S.pid=DB.persons[0]?DB.persons[0].id:null;S.tab='profil';render();toast('Datele au fost restaurate')}catch(e){toast('Fișier invalid: '+e.message)}});break;
+    case 'wipeask':openPanel('Ștergi tot?',`<p style="margin-bottom:14px">Se șterg toate profilurile, înregistrările și documentele de pe acest dispozitiv. Fă întâi o copie de rezervă dacă vrei să le păstrezi.</p><div class="fbtns"><button class="btn danger-solid block" data-act="wipego">Da, șterge tot</button><button class="btn ghost block" data-act="close">Renunț</button></div>`);break;
+    case 'wipego':await wipeAll();closeAllPanels();S.nav=[];S.pid=null;S.tab='profil';render();toast('Totul a fost șters');break;
+    case 'markdone':{const v=get('visits',d.id);if(v){v.status='efectuată';save('visits',v);render(true);toast('Marcată ca efectuată')}break}
+    case 'calmark':{const rec=get(COLL[d.ct],d.cid);if(rec&&!rec.cal){rec.cal=true;save(COLL[d.ct],rec);setTimeout(()=>render(true),400)}break}
+    case 'rowadd':{const box=el.closest('[data-rows]').querySelector('.vrows');box.insertAdjacentHTML('beforeend',rowHtml({}));const l=box.lastElementChild.querySelector('input');if(l)l.focus();break}
+    case 'rowrm':{const r=el.closest('.vrow'),box=r.parentElement;if(box.children.length>1)r.remove();else $$('input',r).forEach(i=>i.value='');break}
+    case 'rowprev':{
+      const form=el.closest('form'),cur=form.dataset.id,reps=mine('labreports',JSON.parse(form.dataset.ctx||'{}').pid).filter(r=>r.id!==cur).sort(cmpDateDesc);
+      if(!reps.length){toast('Nu există o analiză anterioară');break}
+      const ls=reportLabs(reps[0].id),box=form.querySelector('.vrows'),have=$$('[data-f=param]',box).map(i=>norm(i.value));
+      $$('.vrow',box).filter(r=>!$('[data-f=param]',r).value.trim()&&!$('[data-f=val]',r).value.trim()).forEach(r=>r.remove());
+      ls.forEach(l=>{if(have.indexOf(norm(l.param))>=0)return;box.insertAdjacentHTML('beforeend',rowHtml({param:l.param,val:'',u:l.u,lo:l.lo!=null?nv(l.lo):'',hi:l.hi!=null?nv(l.hi):''}))});
+      toast('Am copiat parametrii din '+fd(reps[0].date)+'. Completează valorile.');break}
+  }});
+
+/* câmpuri care reacționează la schimbare */
+const CHANGE={
+  visitDate(el){const f=el.form,st=f.elements.status,t=todayS();if(!st)return;if(el.value>t&&st.value==='efectuată')st.value='planificată';else if(el.value&&el.value<=t&&st.value==='planificată')st.value='efectuată'},
+  visitDoctor(el){const f=el.form,d=get('doctors',el.value);if(!d)return;
+    const sp=f.elements.specialty;if(sp&&!sp.value&&(d.specialties||[]).length===1)sp.value=d.specialties[0];
+    const fc=f.elements.facilityId;if(fc&&!fc.value&&(d.facilityIds||[]).length===1)fc.value=d.facilityIds[0]}};
+document.addEventListener('change',ev=>{
+  const el=ev.target;
+  if(el.dataset&&el.dataset.change&&CHANGE[el.dataset.change])CHANGE[el.dataset.change](el);
+  const id=el.id;
+  if(id==='fs'){S.f.spec=el.value;refreshTl()}
+  else if(id==='fdoc'){S.f.doc=el.value;refreshTl()}
+  else if(id==='fcond'){S.f.cond=el.value;refreshTl()}
+  else if(id==='fp'){S.f.period=el.value;refreshTl()}
+  else if(id==='exp'){S.ex.period=el.value;render(true)}
+  else if(id==='exs'){S.ex.spec=el.value;render(true)}
+  else if(id==='exf'){S.ex.fmt=el.value;render(true)}
+  else if(id==='exq'){S.ex.preset=el.value;render(true)}
+  else if(id==='cur'){META.currency=el.value;saveMeta();render(true)}});
+function refreshTl(){const r=$('#tlres');if(r)r.innerHTML=tlResults()}
+document.addEventListener('input',ev=>{if(ev.target.id==='q'){S.f.q=ev.target.value;refreshTl()}});
+document.addEventListener('submit',ev=>{
+  const f=ev.target;
+  if(f.dataset.form){ev.preventDefault();submitForm(f);return}
+  if(f.dataset.inl){ev.preventDefault();const v=f.elements.v.value.trim();if(!v)return;
+    const arr=f.dataset.inl==='spec'?META.specialties:META.visitTypes;if(arr.indexOf(v)<0){arr.push(v);saveMeta()}render(true)}});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&LAYERS.length)closePanel()});
+window.addEventListener('beforeprint',()=>document.body.classList.add('printing'));
+window.addEventListener('afterprint',()=>document.body.classList.remove('printing'));
+
+/* pornire */
+(async function boot(){
+  await loadAll();
+  const q=new URLSearchParams(location.search);
+  if(q.get('demo')==='1'&&!DB.persons.length)loadDemo();
+  render();
+  if('serviceWorker' in navigator&&/^https:|^http:\/\/localhost/.test(location.protocol+'//'+location.host)){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+})();
+
+</script>
+</body>
+</html>

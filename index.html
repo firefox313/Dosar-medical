@@ -303,6 +303,26 @@ div.row{cursor:default}
 .chk.sm{font-size:13px;padding:4px 0}
 .chk.sm input{width:18px;height:18px}
 
+
+/* 3.2 */
+.fab{position:fixed;z-index:24;right:max(16px,calc(50vw - 320px + 16px));bottom:calc(84px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;background:var(--m);color:var(--on-m);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(42,34,48,.28)}
+.fab[hidden]{display:none}
+@media (min-width:900px){.fab{right:max(16px,calc(50vw - 360px + 16px))}}
+body.printing .fab{display:none}
+.hbe{font-size:22px;line-height:1;flex:none;width:30px;text-align:center}
+.tile .hbe{text-align:left;width:auto}
+.rng{position:relative;display:block;flex:1;min-width:90px;max-width:150px;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--l) 0 20%,var(--ok) 20% 80%,var(--r) 80% 100%);opacity:.9}
+.rng i{position:absolute;top:50%;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;border-radius:50%;background:var(--surface);border:3px solid var(--ok)}
+.rng i.bad{border-color:var(--bad)}
+.row.trow{display:block}
+.trow .tr1{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.trow .tn{font-weight:600;min-width:0}
+.trow .tv{font-weight:700;white-space:nowrap}
+.trow .tr2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
+.trow .tl{font-size:12.5px;font-weight:600}
+.trow .tl.ok{color:var(--ok)}.trow .tl.bad{color:var(--bad)}
+.aien .bub{background:var(--surface2)}
+.more summary{cursor:pointer;font-weight:600;font-size:14px;padding:4px 0}
 </style>
 </head>
 <body>
@@ -312,10 +332,11 @@ div.row{cursor:default}
   <nav class="tabs" aria-label="Navigare principală"><div class="tabs-in" id="tabs"></div></nav>
   <div id="sheet" hidden></div>
   <div id="toast" role="status" hidden></div>
+  <button id="fab" class="fab" data-act="fab" aria-label="Adaugă ceva nou" hidden><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
 </div>
 <script>
 /* ═════ 00 · nucleu: utilitare, iconițe, baza de date locală ═════ */
-const VERSION='3.1.0';
+const VERSION='3.2.0';
 const $=(s,r)=>(r||document).querySelector(s);
 const $$=(s,r)=>Array.prototype.slice.call((r||document).querySelectorAll(s));
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -371,7 +392,11 @@ pulse:'<path d="M3 12h4l2-6 4 12 2-6h6"/>',building:'<rect x="5" y="3" width="14
 wallet:'<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
 trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',link:'<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/>',
 stetho:'<path d="M6 3v6a4 4 0 008 0V3"/><path d="M10 13v2a5 5 0 0010 0v-1"/><circle cx="20" cy="12" r="2"/>',
-layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',upload:'<path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M5 20h14"/>'
+layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',upload:'<path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M5 20h14"/>',
+mic:'<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',
+watch:'<rect x="7" y="6" width="10" height="12" rx="3"/><path d="M9 6l1-3h4l1 3M9 18l1 3h4l1-3M12 10v3l2 1"/>',
+leaf:'<path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 15"/><path d="M5 19c2-5 5-8 9-10"/>',
+type:'<path d="M5 6V4h14v2M12 4v16M9 20h6"/>'
 };
 const ic=(n,s)=>`<svg class="ic" width="${s||20}" height="${s||20}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||''}</svg>`;
 
@@ -379,25 +404,27 @@ const ic=(n,s)=>`<svg class="ic" width="${s||20}" height="${s||20}" viewBox="0 0
 const DEF_SPECS=['Medicină de familie','Pediatrie','Cardiologie','Endocrinologie','Gastroenterologie','Alergologie și imunologie','Dermatologie','Ortopedie','Neurologie','Psihiatrie','Psihologie','ORL','Oftalmologie','Stomatologie','Ginecologie','Urologie','Nefrologie','Pneumologie','Reumatologie','Hematologie','Oncologie','Chirurgie generală','Radiologie și imagistică','Recuperare medicală','Nutriție și dietetică','Medicina muncii','Altele'];
 const DEF_TYPES=['Consultație','Control','Ecografie','Analize','Radiografie','RMN','CT','EKG','Vaccin','Tratament / procedură','Telemedicină','Alte investigații'];
 const FACILITY_KINDS=['Clinică privată','Cabinet','Spital','Laborator','Farmacie','Centru de imagistică','Altceva'];
-const DOC_TAGS=['Analize','Imagistică','Rețetă','Bilet de ieșire','Scrisoare medicală','Vaccinuri','Factură','Alt document'];
+const DOC_TAGS=['Analize','Imagistică','Rețetă','Bilet de ieșire','Scrisoare medicală','Vaccinuri','Factură','Înregistrare audio','Alt document'];
 
 /* ───── baza de date locală (IndexedDB) ───── */
-const DATA=['persons','facilities','doctors','conditions','visits','symptoms','labreports','labs','meds','vaccines','measures','docs','notes','reminders'];
+const DATA=['persons','facilities','doctors','conditions','visits','symptoms','labreports','labs','meds','vaccines','measures','docs','notes','reminders','wellness','habits'];
 const STORES=DATA.concat(['meta','blobs']);
 const DB={};DATA.forEach(s=>DB[s]=[]);
-let META={id:'meta',specialties:DEF_SPECS.slice(),visitTypes:DEF_TYPES.slice(),currency:'RON',genericCal:true,paramAliases:{},tomb:[],created:Date.now()};
+let META={id:'meta',specialties:DEF_SPECS.slice(),visitTypes:DEF_TYPES.slice(),currency:'RON',genericCal:true,paramAliases:{},paramTheme:{},tomb:[],created:Date.now()};
 let idb=null,dbError='',persisted=false;
 function openDB(){return new Promise(res=>{try{
-  const r=indexedDB.open('jurnal-medical',1);
+  const r=indexedDB.open('jurnal-medical',2);
   r.onupgradeneeded=()=>{STORES.forEach(s=>{if(!r.result.objectStoreNames.contains(s))r.result.createObjectStore(s,{keyPath:'id'})})};
-  r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);r.onblocked=()=>res(null)}catch(e){res(null)}})}
+  r.onsuccess=()=>{const db=r.result;db.onversionchange=()=>{try{db.close()}catch(e){}try{location.reload()}catch(e){}};res(db)};
+  r.onerror=()=>res(null);
+  r.onblocked=()=>{try{const m=document.getElementById('main');if(m)m.innerHTML='<div class="card">Actualizez baza de date locală. Închide celelalte file sau ferestre ale aplicației și redeschide-o.</div>'}catch(e){}}}catch(e){res(null)}})}
 const idbStore=(s,m)=>idb.transaction(s,m).objectStore(s);
 function idbAll(s){return new Promise(res=>{try{const q=idbStore(s,'readonly').getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>res([])}catch(e){res([])}})}
 function idbWrite(s,fn){if(!idb)return;try{const t=idb.transaction(s,'readwrite');fn(t.objectStore(s));t.onerror=()=>{dbError='Salvarea locală a eșuat.'};t.onabort=()=>{dbError='Salvarea locală a eșuat (spațiu insuficient?).'}}catch(e){dbError='Salvarea locală a eșuat.'}}
 async function loadAll(){
   idb=await openDB();if(!idb){dbError='Browserul nu permite salvarea locală. Datele se pierd la închidere.';return}
   for(const s of DATA)DB[s]=await idbAll(s);
-  const m=await idbAll('meta');if(m.length){META=Object.assign(META,m[0]);if(!META.tomb)META.tomb=[];if(!META.paramAliases)META.paramAliases={}}
+  const m=await idbAll('meta');if(m.length){META=Object.assign(META,m[0]);if(!META.tomb)META.tomb=[];if(!META.paramAliases)META.paramAliases={};if(!META.paramTheme)META.paramTheme={}}
   try{if(navigator.storage&&navigator.storage.persist)persisted=await navigator.storage.persist()}catch(e){}
 }
 function save(type,rec){hk();rec.updatedAt=Date.now();if(!rec.id)rec.id=uid();const a=DB[type],i=a.findIndex(x=>x.id===rec.id);if(i>=0)a[i]=rec;else a.push(rec);idbWrite(type,s=>s.put(rec));return rec}
@@ -408,7 +435,7 @@ function putBlob(id,blob){hk();idbWrite('blobs',s=>s.put({id:id,blob:blob,type:b
 function getBlob(id){return new Promise(res=>{if(!idb)return res(null);try{const q=idbStore('blobs','readonly').get(id);q.onsuccess=()=>res(q.result?q.result.blob:null);q.onerror=()=>res(null)}catch(e){res(null)}})}
 function delBlob(id){idbWrite('blobs',s=>s.delete(id))}
 async function wipeAll(){
-  DATA.forEach(s=>DB[s]=[]);META=Object.assign(META,{specialties:DEF_SPECS.slice(),visitTypes:DEF_TYPES.slice(),paramAliases:{},tomb:[]});
+  DATA.forEach(s=>DB[s]=[]);META=Object.assign(META,{specialties:DEF_SPECS.slice(),visitTypes:DEF_TYPES.slice(),paramAliases:{},paramTheme:{},tomb:[]});
   if(idb){for(const s of STORES.filter(x=>x!=='meta')){await new Promise(r=>{try{const t=idb.transaction(s,'readwrite');t.objectStore(s).clear();t.oncomplete=r;t.onerror=r;t.onabort=r}catch(e){r()}})}}
   saveMeta()}
 const blobToB64=b=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]||'');r.onerror=()=>res('');r.readAsDataURL(b)});
@@ -427,10 +454,10 @@ async function importAll(text){
 }
 
 /* ═════ 10 · stare, interogări, relații, date de exemplu ═════ */
-const S={tab:'profil',nav:[],pid:null,f:{q:'',types:[],spec:'all',doc:'all',cond:'all',period:'all',fam:false},sel:{},docf:'Toate',gr:'h',costFam:false,
-  lf:{lab:'all',sort:'date'},
-  ex:{seg:'pdf',sec:{fisa:true,afectiuni:true,medicamente:true,vizite:true,analize:true,vaccin:true,crestere:true,simptome:false,note:false,docs:false},period:'3y',spec:'all',cond:'all',sel:{},open:{},anon:true,fmt:'md',preset:'trend'}};
-const COLL={person:'persons',doctor:'doctors',facility:'facilities',condition:'conditions',visit:'visits',symptom:'symptoms',labreport:'labreports',med:'meds',vax:'vaccines',measure:'measures',doc:'docs',note:'notes',reminder:'reminders'};
+const S={tab:'profil',nav:[],pid:null,f:{q:'',types:[],spec:'all',doc:'all',cond:'all',period:'all',fam:false},sel:{},docf:'Toate',gr:'h',costFam:false,wm:'rhr',pu:{},
+  lf:{lab:'all',sort:'date',view:'teme'},
+  ex:{seg:'pdf',sec:{fisa:true,afectiuni:true,medicamente:true,vizite:true,analize:true,vaccin:true,crestere:true,simptome:false,note:false,docs:false,stil:true,garmin:false},period:'3y',spec:'all',cond:'all',sel:{},open:{},anon:true,fmt:'md',preset:'trend'}};
+const COLL={person:'persons',doctor:'doctors',facility:'facilities',condition:'conditions',visit:'visits',symptom:'symptoms',labreport:'labreports',med:'meds',vax:'vaccines',measure:'measures',doc:'docs',note:'notes',reminder:'reminders',wellness:'wellness',habit:'habits'};
 const get=(t,id)=>id?(DB[t].find(x=>x.id===id)||null):null;
 const person=()=>get('persons',S.pid);
 const mine=(t,pid)=>DB[t].filter(x=>x.personId===(pid||S.pid));
@@ -534,7 +561,36 @@ const ALIAS_LIST=[
 ['Cortizol','cortizol','cortisol'],
 ['PSA','psa','antigen prostatic specific'],
 ['D-dimeri','d-dimeri','d dimeri','d-dimer','ddimeri'],
-['Troponină','troponina','troponin']
+['Troponină','troponina','troponin'],
+['eGFR','egfr','rfg','gfr','rata filtrarii glomerulare','filtrare glomerulara'],
+['Lipază','lipaza','lipase'],
+['Bicarbonat','bicarbonat','bicarbonate','hco3','co2','dioxid de carbon','carbon dioxide'],
+['PDW','pdw','pdw ratio'],
+['MPV','mpv','volum plachetar mediu'],
+['Anticorpi anti-HCV','anticorpi hcv','anti-hcv','anti hcv','hcv','hepatitis c virus antibody','hepatitis c virus (hcv) antibody'],
+['AgHBs','aghbs','hbsag','hbs ag','antigen hbs'],
+['HIV','hiv','hiv 1+2','anti hiv'],
+['ANA (anticorpi antinucleari)','ana','anticorpi antinucleari','antinuclear antibodies'],
+['Anti-TPO','anti-tpo','anti tpo','anticorpi anti-tpo','anti-tiroperoxidaza'],
+['Anti-tiroglobulină','anti-tg','anti tg','anti-tiroglobulina','atg'],
+['Vitamina E','vitamina e','vitamin e','alpha tocopherol','alfa tocoferol','vitamin e (alpha tocopherol)'],
+['Testosteron','testosteron','testosterone','testosteron total'],
+['Estradiol','estradiol','e2'],
+['FSH','fsh'],['LH','lh'],
+['Prolactină','prolactina','prolactin'],
+['Progesteron','progesteron','progesterone'],
+['DHEA-S','dhea-s','dheas','dhea s'],
+['SHBG','shbg'],
+['PTH','pth','parathormon','hormon paratiroidian'],
+['Apolipoproteina B','apob','apo b','apolipoproteina b'],
+['Lipoproteina (a)','lp(a)','lpa','lipoproteina a','lipoprotein(a)'],
+['Non-HDL colesterol','non-hdl','non hdl','non-hdl colesterol','non hdl colesterol'],
+['Cistatina C','cistatina c','cystatin c'],
+['Proteine în urină','proteine urina','proteinurie','protein, urine','proteine urinare'],
+['Albumină/creatinină urinară','albumina/creatinina urinara','albumin/creatinine, urine','microalbuminurie'],
+['Factor reumatoid','factor reumatoid','rf','rheumatoid factor'],
+['ASLO','aslo','antistreptolizina o'],
+['Celule CD56+ (NK)','cd56','cd56+','cd56+ cell count']
 ];
 const AMAP={};ALIAS_LIST.forEach(a=>{AMAP[norm(a[0])]=a[0];a.slice(1).forEach(x=>{AMAP[norm(x)]=a[0]})});
 function pcanon(name){
@@ -564,7 +620,7 @@ function cascade(type,id){
   if(type==='doctor'){unset('visits','doctorId');unset('persons','gpId')}
   if(type==='facility'){unset('visits','facilityId');unset('labreports','facilityId');strip('doctors','facilityIds')}
   if(type==='labreport'){DB.labs.filter(l=>l.reportId===id).forEach(l=>removeRec('labs',l.id));unset('docs','reportId')}
-  if(type==='doc')delBlob(id);
+  if(type==='doc'){delBlob(id);unset('notes','docId')}
   if(type==='person'){DATA.filter(c=>c!=='persons').forEach(c=>DB[c].filter(r=>r.personId===id).forEach(r=>{if(c==='docs')delBlob(r.id);removeRec(c,r.id)}))}
 }
 function delEntity(type,id){cascade(type,id);removeRec(COLL[type],id)}
@@ -602,7 +658,7 @@ function costStats(pids){
 function events(pids){
   const ev=[],add=e=>{e.specs=e.specs||[];ev.push(e)};
   pids.forEach(pid=>{
-    DB.visits.filter(v=>v.personId===pid).forEach(v=>add({pid,date:v.date,type:'vizite',title:v.reason||(v.types||[]).join(', ')||'Vizită',sub:[v.status==='planificată'?'Planificată':v.status==='anulată'?'Anulată':'',dname(v.doctorId),fname(v.facilityId)].filter(Boolean).join(' · '),specs:Array.from(specsOf('visit',v)),doctorId:v.doctorId,conditionIds:v.conditionIds||[],text:[v.diagnosis,v.treatment,v.notes,(v.types||[]).join(' ')].join(' '),go:{t:'visit',id:v.id}}));
+    DB.visits.filter(v=>v.personId===pid).forEach(v=>add({pid,date:v.date,type:'vizite',title:v.reason||(v.types||[]).join(', ')||'Vizită',sub:[v.status==='planificată'?'Planificată':v.status==='anulată'?'Anulată':'',dname(v.doctorId),fname(v.facilityId)].filter(Boolean).join(' · '),specs:Array.from(specsOf('visit',v)),doctorId:v.doctorId,conditionIds:v.conditionIds||[],text:[v.diagnosis,v.treatment,v.notes,(v.types||[]).join(' '),(v.aiNotes||[]).map(a=>a.text).join(' ')].join(' '),go:{t:'visit',id:v.id}}));
     DB.labreports.filter(r=>r.personId===pid).forEach(r=>{const ls=reportLabs(r.id),fl=ls.filter(l=>flag(l.v,l.lo,l.hi)).length;
       add({pid,date:r.date,type:'analize',title:'Analize de laborator',sub:ls.length+' parametri'+(fl?' · '+fl+' în afara intervalului':'')+(r.facilityId?' · '+fname(r.facilityId):''),specs:Array.from(specsOf('report',r)),conditionIds:r.conditionIds||[],text:ls.map(l=>l.param).join(' ')+' '+(r.notes||''),go:{t:'labreport',id:r.id}})});
     DB.conditions.filter(c=>c.personId===pid).forEach(c=>{condPeriods(c).forEach((pe,i,arr)=>{const k=arr.length>1?' (episod '+(i+1)+')':'';
@@ -635,6 +691,8 @@ function insights(pid){
   const g=mine('measures',pid).filter(m=>m.height!=null&&m.weight!=null).sort(cmpDateAsc);
   if(g.length>2&&isChild(p)){const L=g[g.length-1],t0=+D(L.date)-365*864e5,P0=g.reduce((a,b)=>Math.abs(+D(b.date)-t0)<Math.abs(+D(a.date)-t0)?b:a),dt=(+D(L.date)-+D(P0.date))/(365*864e5);
     if(dt>0.5)out.push({k:'info',t:`Creștere de ${nf((L.height-P0.height)/dt)} cm pe an în ultima perioadă.`,go:{t:'growth'}})}
+  const wl=mine('wellness',pid).filter(x=>x.rhr!=null).sort(cmpDateAsc);
+  if(wl.length>=4){const L=wl[wl.length-1],pv=wl.slice(-5,-1),A=pv.reduce((a,b)=>a+b.rhr,0)/pv.length;if(L.rhr-A>=4)out.push({k:'warn',t:`Puls de repaus: ${nf(L.rhr,0)} bpm în săptămâna încheiată pe ${fd(L.date)}, față de media de ${nf(A,0)} din săptămânile anterioare.`,go:{t:'wellness'}})}
   return out}
 
 /* ═════ date de exemplu ═════ */
@@ -726,6 +784,66 @@ function loadDemo(){
   S.pid=il.id;
 }
 
+
+/* ───── 3.2: teme de analize, săptămâni Garmin, obiceiuri ───── */
+const THEMES=[
+ {id:'heart',l:'Inimă și circulație',p:['Colesterol total','HDL colesterol','LDL colesterol','Non-HDL colesterol','Trigliceride (TG)','Apolipoproteina B','Lipoproteina (a)','Homocisteină','Troponină']},
+ {id:'kidney',l:'Rinichi',p:['eGFR','Creatinină','Uree (BUN)','Acid uric','Cistatina C','Albumină/creatinină urinară','Proteine în urină']},
+ {id:'liver',l:'Ficat și pancreas',p:['TGO (AST)','TGP (ALT)','Fosfatază alcalină (ALP)','GGT','Bilirubină totală','Bilirubină directă','Albumină','Amilază','Lipază']},
+ {id:'metab',l:'Metabolism',p:['Glicemie (glucoză)','Hemoglobină glicozilată (HbA1c)','Insulină','Magneziu']},
+ {id:'blood',l:'Sânge (hemoleucogramă și coagulare)',p:['Leucocite (WBC)','Hematii (RBC)','Hemoglobină (HGB)','Hematocrit (HCT)','Trombocite (PLT)','VEM (MCV)','HEM (MCH)','CHEM (MCHC)','RDW','PDW','MPV','Fibrinogen','INR','D-dimeri']},
+ {id:'immune',l:'Imunitate și inflamație',p:['Leucocite (WBC)','Proteina C reactivă (CRP)','VSH (ESR)','Neutrofile (NEU)','Limfocite (LYM)','Monocite (MON)','Eozinofile (EOS)','Bazofile (BAS)','Celule CD56+ (NK)']},
+ {id:'elec',l:'Electroliți',p:['Sodiu (Na)','Potasiu (K)','Clor (Cl)','Bicarbonat','Calciu','Fosfor','Magneziu']},
+ {id:'thyroid',l:'Tiroidă',p:['TSH','FT4 (T4 liber)','FT3 (T3 liber)','Anti-TPO','Anti-tiroglobulină']},
+ {id:'repro',l:'Hormoni și reproducere',p:['Testosteron','Estradiol','FSH','LH','Prolactină','Progesteron','DHEA-S','SHBG','PSA','Cortizol']},
+ {id:'bones',l:'Oase',p:['Calciu','Vitamina D (25-OH)','Fosfor','PTH','Fosfatază alcalină (ALP)']},
+ {id:'nutri',l:'Vitamine și minerale',p:['Vitamina D (25-OH)','Acid folic (folat)','Fier seric','Feritină','Vitamina B12','Zinc','Vitamina E','Magneziu']},
+ {id:'autoimm',l:'Autoimunitate',p:['ANA (anticorpi antinucleari)','Anti-TPO','Anti-tiroglobulină','Factor reumatoid']},
+ {id:'infect',l:'Boli infecțioase',p:['Anticorpi anti-HCV','AgHBs','HIV','ASLO']},
+ {id:'alte',l:'Alte rezultate',p:[]}];
+function themesOf(n){const o=META.paramTheme&&META.paramTheme[n];if(o&&o.length)return o;const r=THEMES.filter(t=>t.p.indexOf(n)>=0).map(t=>t.id);return r.length?r:['alte']}
+const themeNames=n=>themesOf(n).map(id=>(THEMES.find(t=>t.id===id)||{l:id}).l).join(', ');
+function rngBar(v,lo,hi){
+  if(lo==null&&hi==null)return '';
+  let pos;const w=(lo!=null&&hi!=null)?(hi-lo)||1:(hi!=null?hi:lo)||1;
+  if(lo!=null&&hi!=null){pos=v<lo?20-20*Math.min(1,(lo-v)/w):v>hi?80+20*Math.min(1,(v-hi)/w):20+60*(v-lo)/w}
+  else if(hi!=null){pos=v<=hi?80*Math.max(0,v)/hi:80+20*Math.min(1,(v-hi)/hi)}
+  else{pos=v>=lo?20+60*Math.min(1,(v-lo)/lo)+0:20*Math.max(0,v)/lo}
+  pos=Math.max(3,Math.min(97,pos));const out=flag(v,lo,hi);
+  return `<span class="rng" style="--l:${lo!=null?'var(--warn)':'var(--ok)'};--r:${hi!=null?'var(--warn)':'var(--ok)'}" aria-hidden="true"><i class="${out?'bad':''}" style="left:${pos}%"></i></span>`}
+
+function parseDur(s){
+  if(s==null)return null;s=String(s).trim().toLowerCase();if(!s)return null;
+  let m=/^(\d+):(\d{1,2})(?::(\d{1,2}))?$/.exec(s);if(m)return (+m[1])*3600+(+m[2])*60+(+(m[3]||0));
+  const h=/(\d+(?:[.,]\d+)?)\s*(?:h|ore|ora)\b/.exec(s),mi=/(\d+)\s*(?:min|m)\b/.exec(s),se=/(\d+)\s*(?:sec|s)\b/.exec(s);
+  if(h||mi||se)return Math.round((h?parseFloat(h[1].replace(',','.'))*3600:0)+(mi?+mi[1]*60:0)+(se?+se[1]:0));
+  const n=num(s);return n==null?null:Math.round(n*60)}
+function fmtDur(sec,secs){
+  if(sec==null||isNaN(sec))return '—';
+  if(secs){const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=Math.round(sec%60);return h+':'+p2(m)+':'+p2(s)}
+  const t=Math.round(sec/60);return Math.floor(t/60)+':'+p2(t%60)}
+const WLM=[
+ {k:'strN',l:'Antrenamente de forță',d:0},{k:'strSec',l:'Durată forță',dur:1,secs:1},
+ {k:'runN',l:'Alergări',d:0},{k:'runKm',l:'Distanță alergare',u:'km'},{k:'runSec',l:'Durată alergare',dur:1,secs:1},
+ {k:'othN',l:'Alte activități',d:0},{k:'sleepScore',l:'Scor somn',d:0},{k:'sleepSec',l:'Somn mediu',dur:1},
+ {k:'steps',l:'Pași (medie pe zi)',d:0,sep:1},{k:'rhr',l:'Puls de repaus',u:'bpm',d:0},{k:'stress',l:'Stres mediu',d:0},
+ {k:'weight',l:'Greutate medie',u:'kg'},{k:'hrv',l:'HRV',u:'ms'},{k:'vo2',l:'VO2 max'}];
+const wlFmt=(m,v)=>v==null?'—':m.dur?fmtDur(v,m.secs):(m.sep?Math.round(v).toLocaleString('ro-RO'):nf(v,m.d==null?1:m.d))+(m.u?' '+m.u:'');
+
+const HB_FREQ=['Niciodată','Rar','Unele zile','Zilnic'];
+const HB_DUR=['','sub 15 minute','15–30 minute','30–60 minute','1–2 ore','peste 2 ore'];
+const HB_AGO=[['','— nu știu / nu contează —'],['1','acum mai puțin de o lună'],['6','acum ~6 luni'],['12','acum ~1 an'],['24','acum ~2 ani'],['36','acum ~3 ani'],['60','acum ~5 ani'],['120','acum ~10 ani'],['240','mai mult de 10 ani']];
+const HBC=[
+ {l:'Saună',e:'🧖',u:'ori pe săptămână',dur:1},{l:'Fumat (tutun)',e:'🚬',u:'țigări pe zi'},{l:'Vapat / țigară electronică',e:'💨',u:'sesiuni pe zi'},
+ {l:'Carne procesată',e:'🥓',u:'zile pe săptămână'},{l:'Alcool',e:'🍷',u:'pahare pe săptămână'},{l:'Periat dinții',e:'🪥',u:'ori pe zi'},
+ {l:'Mișcare / sport',e:'🏃',u:'ori pe săptămână',dur:1},{l:'Cafeină (cafea, ceai)',e:'☕',u:'cești pe zi'},{l:'Apă',e:'💧',u:'litri pe zi'},
+ {l:'Dulciuri / zahăr adăugat',e:'🍬',u:'zile pe săptămână'},{l:'Fast-food',e:'🍔',u:'ori pe săptămână'},{l:'Băuturi îndulcite',e:'🥤',u:'porții pe săptămână'},
+ {l:'Legume și fructe',e:'🥦',u:'porții pe zi'},{l:'Expunere la soare',e:'🌞',u:'minute pe zi'},{l:'Meditație / relaxare',e:'🧘',u:'minute pe zi',dur:1},
+ {l:'Ecrane înainte de culcare',e:'📱',u:'minute pe seară'},{l:'Somn la ore regulate',e:'😴',u:'nopți pe săptămână'}];
+const hbEmoji=n=>(HBC.find(h=>norm(h.l)===norm(n))||{e:'✍️'}).e;
+const hbCurrent=h=>!h.end||h.end>=todayS();
+function agoText(s){const d=D(s);if(!d)return '';const m=Math.round((new Date()-d)/(30.44*864e5));if(m<1)return 'sub o lună';if(m<24)return m+(m===1?' lună':' luni');return Math.round(m/12)+' ani'}
+
 /* ═════ 20 · grafice SVG ═════ */
 const AG=[2,3,4,5,6,7,8,9];
 /* ATENȚIE: curbe orientative (fete). Se înlocuiesc cu tabelele oficiale OMS. */
@@ -799,6 +917,7 @@ const optConds=pid=>mine('conditions',pid).slice().sort(cmpName).map(c=>[c.id,c.
 const optVisits=pid=>[['','— nelegată —']].concat(mine('visits',pid).slice().sort(cmpDateDesc).map(v=>[v.id,vlabel(v)]));
 const optReports=pid=>[['','— nelegat —']].concat(mine('labreports',pid).slice().sort(cmpDateDesc).map(r=>[r.id,'Analize din '+fd(r.date)]));
 const optSimple=a=>a.map(x=>[x,x]);
+const optDocs=pid=>[['','— niciun document —']].concat(mine('docs',pid).slice().sort(cmpDateDesc).map(d=>[d.id,d.name+' · '+fd(d.date)]));
 
 const multiItem=(k,o,on)=>`<label class="mi"><input type="checkbox" name="${k}[]" value="${esc(o[0])}"${on?' checked':''}><span>${esc(o[1])}</span></label>`;
 const rowHtml=r=>`<div class="vrow${r.unsure?' unsure':''}"><input data-f="param" list="dl-params" placeholder="Parametru" value="${esc(r.param||'')}" autocomplete="off"><div class="vr2"><input data-f="val" inputmode="decimal" placeholder="Valoare" value="${esc(r.val||'')}" autocomplete="off"><input data-f="u" placeholder="Unit." value="${esc(r.u||'')}" autocomplete="off"><input data-f="lo" inputmode="decimal" placeholder="Min" value="${esc(r.lo||'')}" autocomplete="off"><input data-f="hi" inputmode="decimal" placeholder="Max" value="${esc(r.hi||'')}" autocomplete="off"><button type="button" class="iconbtn sm" data-act="rowrm" aria-label="Șterge rândul">${ic('x',16)}</button></div></div>`;
@@ -820,7 +939,7 @@ function fieldHtml(f,rec,ctx){
       return `<div class="f" data-rows="1"><span class="fl">${lab}</span><div class="vrows" id="${id}">${rows.map(rowHtml).join('')}</div><div class="rowbtns"><button type="button" class="btn ghost sm" data-act="rowadd">${ic('plus',14)}Parametru</button><button type="button" class="btn ghost sm" data-act="rowprev">Parametrii din ultima analiză</button></div><datalist id="dl-params">${allParams().map(x=>`<option value="${esc(x)}">`).join('')}</datalist>${help}</div>`}
     case 'periods':{const rows=(v&&v.length)?v:[{start:'',end:''}];return `<div class="f"><span class="fl">${lab}</span><div class="prows">${rows.map(perHtml).join('')}</div><div class="rowbtns"><button type="button" class="btn ghost sm" data-act="peradd">${ic('plus',14)}Încă o perioadă</button></div>${help}</div>`}
     case 'photo':return `<div class="f"><span class="fl">${lab}</span><div class="phrow"><span class="phprev av lg" style="${v?`background-image:url(${v});background-size:cover;background-position:center`:''}">${v?'':esc((rec.name||'?')[0])}</span><div class="phbtns"><input type="file" accept="image/*" data-change="photoPick"><button type="button" class="btn ghost sm" data-act="photoclear">Șterge poza</button></div></div><input type="hidden" name="${f.k}" value="${esc(v||'')}">${help}</div>`;
-    case 'files':return `<div class="f"><span class="fl">${lab}</span><input type="file" id="${id}" name="${f.k}" multiple accept="image/*,application/pdf">${help}${f.ai?`<div><button type="button" class="btn ghost sm" data-act="ai-lab">${ic('spark',14)}Extrage valorile din buletin cu AI</button></div>`:''}</div>`;
+    case 'files':return `<div class="f"><span class="fl">${lab}</span><input type="file" id="${id}" name="${f.k}" multiple accept="${f.audio?'image/*,application/pdf,audio/*,.m4a,.mp3,.wav,.aac,.ogg,.opus,.amr,.3gp':'image/*,application/pdf'}">${help}${f.ai?`<div><button type="button" class="btn ghost sm" data-act="ai-lab">${ic('spark',14)}Extrage valorile din buletin cu AI</button></div>`:''}</div>`;
   }
   return ''}
 function collect(form,fields){
@@ -843,9 +962,16 @@ async function compressImage(file){
     const b=await new Promise(r=>c.toBlob(r,'image/jpeg',0.85));if(b&&b.size<file.size){b.name=file.name;return new File([b],file.name.replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'})}
   }catch(e){}
   return file}
+const AUD_EXT={m4a:'audio/mp4',mp3:'audio/mpeg',wav:'audio/wav',aac:'audio/aac',ogg:'audio/ogg',opus:'audio/ogg',amr:'audio/amr','3gp':'audio/3gpp',webm:'audio/webm',flac:'audio/flac'};
+const extOf=n=>((/\.([A-Za-z0-9]+)$/.exec(n||'')||[])[1]||'').toLowerCase();
 async function attachFiles(files,pid,o){
-  for(const f0 of (files||[])){const f=await compressImage(f0),isPdf=/pdf/i.test(f.type)||/\.pdf$/i.test(f.name);
-    const d=save('docs',{personId:pid,name:(o.name&&files.length===1)?o.name:f.name.replace(/\.[^.]+$/,''),type:isPdf?'pdf':'img',mime:f.type,size:f.size,date:o.date||todayS(),tag:o.tag||'Alt document',visitId:o.visitId||null,reportId:o.reportId||null,conditionIds:o.conditionIds||[]});putBlob(d.id,f)}}
+  for(const f0 of (files||[])){const f=await compressImage(f0),ex=extOf(f.name),isAud=/^audio\//i.test(f.type)||!!AUD_EXT[ex],isPdf=!isAud&&(/pdf/i.test(f.type)||ex==='pdf');
+    if(isAud&&f.size>150*1048576){toast('Înregistrarea „'+f.name+'” are peste 150 MB și nu a fost atașată.');continue}
+    const mime=f.type||(isAud?AUD_EXT[ex]:'');
+    const tag=isAud&&(!o.tag||o.tag==='Alt document')?'Înregistrare audio':(o.tag||'Alt document');
+    const d=save('docs',{personId:pid,name:(o.name&&files.length===1)?o.name:f.name.replace(/\.[^.]+$/,''),type:isAud?'audio':isPdf?'pdf':'img',mime:mime,ext:isAud?ex:'',size:f.size,date:o.date||todayS(),tag:tag,visitId:o.visitId||null,reportId:o.reportId||null,conditionIds:o.conditionIds||[]});putBlob(d.id,f)}}
+const audioExt=d=>d&&d.ext?'.'+d.ext:'.m4a';
+const audioMime=d=>(d&&d.mime&&/^audio\//.test(d.mime))?d.mime:(AUD_EXT[d&&d.ext]||'audio/mp4');
 function replaceLabs(rep,rows){
   DB.labs.filter(l=>l.reportId===rep.id).forEach(l=>{const i=DB.labs.indexOf(l);if(i>=0)DB.labs.splice(i,1);idbWrite('labs',s=>s.delete(l.id))});
   rows.forEach(x=>{if(!x.param)return;const n=num(x.val);save('labs',{personId:rep.personId,reportId:rep.id,date:rep.date,param:x.param,v:n,vt:n==null?x.val:'',u:x.u,lo:num(x.lo),hi:num(x.hi)})})}
@@ -888,7 +1014,7 @@ SCHEMAS.visit={title:'Vizită',
     {k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'},
     {k:'cost',l:'Cost ('+(META.currency||'RON')+')',t:'num',half:1,ph:'ex. 250'},{k:'costNote',l:'Observații cost',t:'text',half:1,ph:'plătit, decontat…'},
     {k:'next',l:'Următorul control recomandat',t:'date',help:'Se adaugă automat la „Ce urmează”.'},NOEXP,
-    {k:'files',l:'Documente (poze sau PDF)',t:'files'}],
+    {k:'files',l:'Documente (poze, PDF sau audio)',t:'files',audio:1,help:'Poți atașa și o înregistrare audio a discuției cu medicul.'}],
   save:async(v,rec,ctx)=>{const r=rec||{personId:ctx.pid};const types=v.types.slice();
     (v.types__new||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(t=>{if(types.indexOf(t)<0)types.push(t);if(META.visitTypes.indexOf(t)<0){META.visitTypes.push(t);saveMeta()}});
     let sp=v.specialty;if(!sp&&v.doctorId){const d=get('doctors',v.doctorId);if(d&&(d.specialties||[]).length===1)sp=d.specialties[0]}
@@ -923,11 +1049,15 @@ SCHEMAS.measure={title:'Măsurători',
   fields:()=>[{k:'date',l:'Data',t:'date',req:1},{k:'height',l:'Înălțime (cm)',t:'num',half:1},{k:'weight',l:'Greutate (kg)',t:'num',half:1},{k:'pulse',l:'Puls (bpm)',t:'num',half:1},{k:'sys',l:'Tensiune sistolică',t:'num',half:1},{k:'dia',l:'Tensiune diastolică',t:'num',half:1},{k:'note',l:'Note',t:'text',half:1}],
   save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid,source:'manual'};Object.assign(r,{date:v.date,height:v.height,weight:v.weight,pulse:v.pulse,sys:v.sys,dia:v.dia,note:v.note});return save('measures',r)}};
 SCHEMAS.note={title:'Notă',
-  fields:(r,ctx)=>[{k:'title',l:'Titlu',t:'text',req:1},{k:'text',l:'Text',t:'area'},{k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'},{k:'pin',l:'Fixează sus',t:'check'},NOEXP],
-  save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid,date:todayS()};Object.assign(r,{noExport:v.noExport,title:v.title,text:v.text,conditionIds:v.conditionIds,pin:v.pin});return save('notes',r)}};
+  defaults:()=>({date:todayS()}),
+  fields:(r,ctx)=>[{k:'title',l:'Titlu',t:'text',req:1},{k:'date',l:'Data notei',t:'date',req:1,help:'Apare în Istoric la această dată. Pentru o notă despre un document, pune data documentului.'},{k:'text',l:'Text',t:'area'},
+    {k:'docId',l:'Document legat',t:'select',opts:()=>optDocs(ctx.pid)},{k:'visitId',l:'Vizită legată',t:'select',opts:()=>optVisits(ctx.pid)},
+    {k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'},{k:'pin',l:'Fixează sus',t:'check'},NOEXP],
+  save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid};const dc=get('docs',v.docId);
+    Object.assign(r,{noExport:v.noExport,title:v.title,date:v.date||r.date||todayS(),text:v.text,docId:v.docId||null,visitId:v.visitId||(dc&&dc.visitId)||null,conditionIds:v.conditionIds,pin:v.pin});return save('notes',r)}};
 SCHEMAS.doc={title:'Document',
   defaults:()=>({date:todayS(),tag:'Alt document'}),
-  fields:(r,ctx)=>(r.id?[]:[{k:'files',l:'Fișier (poză sau PDF)',t:'files',req:1}]).concat([{k:'name',l:'Nume',t:'text',ph:'implicit, numele fișierului'},{k:'tag',l:'Tip',t:'select',opts:()=>optSimple(DOC_TAGS),half:1},{k:'date',l:'Data',t:'date',half:1},
+  fields:(r,ctx)=>(r.id?[]:[{k:'files',l:'Fișier (poză, PDF sau audio)',t:'files',req:1,audio:1}]).concat([{k:'name',l:'Nume',t:'text',ph:'implicit, numele fișierului'},{k:'tag',l:'Tip',t:'select',opts:()=>optSimple(DOC_TAGS),half:1},{k:'date',l:'Data',t:'date',half:1},
     {k:'visitId',l:'Vizită legată',t:'select',opts:()=>optVisits(ctx.pid)},{k:'reportId',l:'Raport de analize legat',t:'select',opts:()=>optReports(ctx.pid)},
     {k:'conditionIds',l:'Afecțiuni legate',t:'multi',opts:()=>optConds(ctx.pid),quick:'condition',quickLabel:'Afecțiune nouă'}]),
   save:async(v,rec,ctx)=>{if(rec){Object.assign(rec,{name:v.name||rec.name,tag:v.tag,date:v.date,visitId:v.visitId||null,reportId:v.reportId||null,conditionIds:v.conditionIds});return save('docs',rec)}
@@ -936,6 +1066,34 @@ SCHEMAS.reminder={title:'Reminder',
   defaults:()=>({date:addDays(todayS(),30),kind:'Control'}),
   fields:()=>[{k:'title',l:'Ce trebuie făcut',t:'text',req:1},{k:'date',l:'Data',t:'date',req:1,half:1},{k:'kind',l:'Tip',t:'select',half:1,opts:()=>optSimple(['Control','Analize','Vaccin','Altele'])}],
   save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid,refType:null,refId:null,cal:false};Object.assign(r,{title:v.title,date:v.date,kind:v.kind});return save('reminders',r)}};
+
+SCHEMAS.wellness={title:'Săptămână Garmin',
+  defaults:()=>({date:todayS()}),
+  prep:r=>Object.assign({},r,{strDur:r.strSec!=null?fmtDur(r.strSec,true):(r.strDur||''),runDur:r.runSec!=null?fmtDur(r.runSec,true):(r.runDur||''),sleepDur:r.sleepSec!=null?fmtDur(r.sleepSec):(r.sleepDur||'')}),
+  fields:()=>[{k:'date',l:'Ultima zi din săptămână',t:'date',req:1,help:'„Ultimele 7 zile” din Garmin Connect se termină azi. Dacă introduci datele mai târziu, pune ultima zi din interval.'},
+    {k:'strN',l:'Antrenamente de forță',t:'num',half:1},{k:'strDur',l:'Durată forță (h:mm:ss)',t:'text',half:1,ph:'2:21:39'},
+    {k:'runN',l:'Alergări',t:'num',half:1},{k:'runKm',l:'Distanță alergare (km)',t:'num',half:1},
+    {k:'runDur',l:'Durată alergare (opțional)',t:'text',half:1,ph:'1:35:00'},{k:'othN',l:'Alte activități',t:'num',half:1},
+    {k:'sleepScore',l:'Scor somn (medie)',t:'num',half:1},{k:'sleepDur',l:'Somn mediu (h:mm)',t:'text',half:1,ph:'7:25'},
+    {k:'steps',l:'Pași (medie pe zi)',t:'text',half:1,ph:'5841'},{k:'rhr',l:'Puls de repaus (bpm)',t:'num',half:1},
+    {k:'stress',l:'Stres mediu',t:'num',half:1},{k:'weight',l:'Greutate medie (kg)',t:'num',half:1},
+    {k:'hrv',l:'HRV (ms), manual',t:'num',half:1},{k:'vo2',l:'VO2 max, manual',t:'num',half:1},{k:'note',l:'Note',t:'text'}],
+  save:(v,rec,ctx)=>{
+    const ex=!rec?DB.wellness.find(x=>x.personId===ctx.pid&&x.date===v.date):null,r=rec||ex||{personId:ctx.pid,source:'manual'};
+    const stp=String(v.steps||'').replace(/[.\s,]/g,''),vals={date:v.date,strN:v.strN,strSec:parseDur(v.strDur),runN:v.runN,runKm:v.runKm,runSec:parseDur(v.runDur),othN:v.othN,sleepScore:v.sleepScore,sleepSec:parseDur(v.sleepDur),steps:stp?parseInt(stp,10):null,rhr:v.rhr,stress:v.stress,weight:v.weight,hrv:v.hrv,vo2:v.vo2};
+    Object.keys(vals).forEach(k=>{if(ex&&vals[k]==null)return;r[k]=vals[k]});
+    if(v.note||!ex)r.note=v.note;return save('wellness',r)}};
+SCHEMAS.habit={title:'Obicei',
+  defaults:()=>({freq:'Unele zile'}),
+  fields:()=>[{k:'name',l:'Obicei',t:'text',req:1,list:()=>HBC.map(h=>h.l),ph:'ex. Saună, Alcool, Cafeină'},
+    {k:'freq',l:'Cât de des',t:'select',opts:()=>optSimple(HB_FREQ)},
+    {k:'amount',l:'Cantitate (opțional)',t:'num',half:1,ph:'ex. 3'},{k:'unit',l:'Unitate',t:'text',half:1,ph:'ori pe săptămână',list:()=>Array.from(new Set(HBC.map(h=>h.u)))},
+    {k:'duration',l:'Cât durează o dată (opțional)',t:'select',opts:()=>HB_DUR.map(x=>[x,x||'—'])},
+    {k:'startAgo',l:'De cât timp (aproximativ)',t:'select',opts:()=>HB_AGO},{k:'start',l:'sau data exactă de început',t:'date'},
+    {k:'end',l:'Până când (gol = încă îl am)',t:'date',help:'Dacă pui o dată trecută, obiceiul trece la „Obiceiuri trecute”.'},
+    {k:'note',l:'Note',t:'text'},NOEXP],
+  save:(v,rec,ctx)=>{const r=rec||{personId:ctx.pid};let st=v.start||null;if(!st&&v.startAgo)st=addMonths(todayS(),-parseInt(v.startAgo,10));
+    Object.assign(r,{noExport:v.noExport,name:v.name,e:hbEmoji(v.name),freq:v.freq,amount:v.amount,unit:v.unit,duration:v.duration,start:st,end:v.end||null,note:v.note});return save('habits',r)}};
 
 SCHEMAS.specialty={title:'Specialitate',fields:()=>[{k:'name',l:'Denumire',t:'text',req:1,ph:'ex. Neurologie'}],
   save:(v)=>{const n=v.name.trim();if(META.specialties.indexOf(n)<0){META.specialties.push(n);saveMeta()}return {id:n,name:n}}};
@@ -1003,8 +1161,9 @@ function reportRow(r){
 function vaxRow(v){
   const lab={efectuat:['Efectuat','ok'],programat:['Programat','m'],restant:['Restant','warn'],recomandat:['Recomandat','']}[v.status]||['',''];
   return open({sheet:'vax',id:v.id},`<div class="grow"><div class="t">${esc(v.name)}</div><div class="s">${esc(v.age||'')}${v.note?' · '+esc(v.note):''}</div></div>${chip((v.date?fd(v.date)+' · ':'')+lab[0],lab[1])}`)}
-function docCard(d){return `<button class="doc" data-act="doc" data-id="${d.id}"><div class="th" data-th="${d.id}">${ic(d.type==='pdf'?'pdf':'img',34)}<span class="chip ft">${d.type==='pdf'?'PDF':'Poză'}</span></div><div class="tx"><b>${esc(d.name)}</b><span class="sub">${fd(d.date)} · ${esc(d.tag||'')}</span></div></button>`}
-function noteRow(n){return open({note:n.id},`<div class="grow"><div class="t">${n.pin?ic('star',14)+' ':''}${esc(n.title)}</div><div class="s">${fd(n.date)}</div><p class="sub" style="margin-top:4px;color:var(--ink)">${esc((n.text||'').slice(0,110))}${(n.text||'').length>110?'…':''}</p></div>`)}
+function docCard(d){return `<button class="doc" data-act="doc" data-id="${d.id}"><div class="th" data-th="${d.id}">${ic(d.type==='pdf'?'pdf':d.type==='audio'?'mic':'img',34)}<span class="chip ft">${d.type==='pdf'?'PDF':d.type==='audio'?'Audio':'Poză'}</span></div><div class="tx"><b>${esc(d.name)}</b><span class="sub">${fd(d.date)} · ${esc(d.tag||'')}</span></div></button>`}
+function noteLinks(n){const d=get('docs',n.docId),v=get('visits',n.visitId);return (d?' · document: '+esc(d.name):'')+(v&&!d?' · vizita din '+fd(v.date):'')}
+function noteRow(n){return open({note:n.id},`<div class="grow"><div class="t">${n.pin?ic('star',14)+' ':''}${esc(n.title)}</div><div class="s">${fd(n.date)}${noteLinks(n)}</div><p class="sub" style="margin-top:4px;color:var(--ink)">${esc((n.text||'').slice(0,110))}${(n.text||'').length>110?'…':''}</p></div>`)}
 function upRow(u){
   return `<div class="row up">${dbox(u.date)}<button class="grow rowbtn" data-act="open" data-v="${J(u.go)}"><div class="t">${esc(u.title)}</div><div class="s">${fd(u.date)} · ${esc(u.sub||u.kind)}</div></button>${u.ct?calAnchor(u.ct,u.cid):''}</div>`}
 
@@ -1042,6 +1201,8 @@ function vProfil(){
     ${tile({t:'docs'},'file','Documente',mine('docs').length+' fișiere (poze, PDF)')}
     ${tile({t:'growth'},'ruler',isChild(p)?'Creștere și măsurători':'Măsurători',gl?g.length+' înregistrări':'Nicio măsurătoare')}
     ${tile({t:'specs'},'layers','Pe specialitate',sp+' specialități folosite')}
+    ${tile({t:'wellness'},'watch','Garmin și activitate',mine('wellness').length?mine('wellness').length+' săptămâni înregistrate':'Antrenamente, somn, puls')}
+    ${tile({t:'habits'},'leaf','Stil de viață',mine('habits').filter(hbCurrent).length+' obiceiuri urmărite')}
     ${tile({t:'notes'},'note','Note',mine('notes').length+' note')}
     ${tile({t:'doctors'},'stetho','Medici',DB.doctors.length+' în agendă')}
     ${tile({t:'facilities'},'building','Unități medicale',DB.facilities.length+' în agendă')}
@@ -1082,11 +1243,15 @@ function vVisit(v){
    <div class="card"><div class="kv">${kvRow('Medic',d?lnk({t:'doctor',id:d.id},d.name):'')}${kvRow('Unitate',f?lnk({t:'facility',id:f.id},f.name):'')}${kvRow('Cost',x.cost!=null?'<b>'+money(x.cost)+'</b>'+(x.costNote?' · '+esc(x.costNote):''):'')}</div>
     ${x.diagnosis?`<div class="sep"></div><div class="lbl">Diagnostic</div><p>${esc(x.diagnosis)}</p>`:''}${x.treatment?`<div class="sep"></div><div class="lbl">Tratament recomandat</div><p style="white-space:pre-wrap">${esc(x.treatment)}</p>`:''}${x.notes?`<div class="sep"></div><div class="lbl">Concluzii și note</div><p style="white-space:pre-wrap">${esc(x.notes)}</p>`:''}
     ${(x.conditionIds||[]).length?`<div class="sep"></div><div class="lbl">Afecțiuni legate</div><div class="chips" style="margin-top:6px">${condChips(x.conditionIds)}</div>`:''}</div>
+   ${aiEntries(x)}
    ${x.next?`<div class="card"><h2>Următorul control</h2><div class="row" style="border:0;padding:0">${dbox(x.next)}<div class="grow"><div class="t">${fd(x.next)}</div></div>${rem?calAnchor('reminder',rem.id):''}</div></div>`:''}
    ${sect('Analize',rp.length,btnAdd('labreport','Analize',pf),rp.length?`<div class="list">${rp.map(reportRow).join('')}</div>`:'<div class="sub">Nicio analiză legată.</div>')}
    ${sect('Medicamente prescrise',ms.length,btnAdd('med','Medicament',pf),ms.length?`<div class="list">${ms.map(medRow).join('')}</div>`:'<div class="sub">Niciun medicament legat.</div>')}
    ${sect('Simptome',sy.length,btnAdd('symptom','Simptom',pf),sy.length?`<div class="list">${sy.map(symRow).join('')}</div>`:'<div class="sub">Niciun simptom legat.</div>')}
-   ${sect('Documente',ds.length,btnAdd('doc','Document',pf),ds.length?`<div class="docs">${ds.map(docCard).join('')}</div><div style="margin-top:10px"><button class="btn ghost sm" data-act="ai-visitdocs" data-id="${x.id}">${ic('spark',14)}Interpretează documentele vizitei cu AI</button></div>`:'<div class="sub">Niciun document atașat.</div>')}`}
+   ${sect('Documente',ds.length,btnAdd('doc','Document',pf),ds.length?`<div class="docs">${ds.map(docCard).join('')}</div><div style="margin-top:10px"><button class="btn ghost sm" data-act="ai-visitdocs" data-id="${x.id}">${ic('spark',14)}Interpretează documentele vizitei cu AI</button></div>`:'<div class="sub">Niciun document atașat.</div>')}
+   ${(()=>{const ns=mine('notes',x.personId).filter(n=>n.visitId===x.id).sort(cmpDateDesc);return sect('Note',ns.length,btnAdd('note','Notă',{visitId:x.id,conditionIds:x.conditionIds||[],date:x.date}),ns.length?`<div class="list">${ns.map(noteRow).join('')}</div>`:'<div class="sub">Nicio notă legată.</div>')})()}`}
+function aiEntries(x){const a=x.aiNotes||[];if(!a.length)return '';
+  return `<div class="card"><h2>Concluzii extrase cu AI ${ic('spark',16)}</h2><div class="sub" style="margin:4px 0 10px">Generate de AI din documentele vizitei. Pot conține greșeli: contează ce a spus medicul.</div>${a.map(e=>{const dd=get('docs',e.docId);return `<div class="aien"><div class="lbl">${fd(toS(new Date(e.at)))} · ${dd?lnk({doc:dd.id},dd.name):esc(e.title||'')}</div><div class="bub ai" style="max-width:100%;margin-top:6px">${mdLite(e.text)}</div><div style="margin-top:6px"><button class="btn ghost sm danger" data-act="ai-delentry" data-vid="${x.id}" data-eid="${e.id}">${ic('trash',14)}Șterge</button></div></div>`}).join('<div class="sep"></div>')}</div>`}
 
 /* ───── simptome, medicamente ───── */
 function vSymptoms(){const l=mine('symptoms');if(!l.length)return emptyCard('Niciun simptom. Notează episoade (cu început și sfârșit), nu zilnic.');
@@ -1107,8 +1272,8 @@ function vLabs(){
   const reps=sortLab?(()=>{const g={};rs.forEach(r=>{(g[r.facilityId||'']=g[r.facilityId||'']||[]).push(r)});return Object.keys(g).sort((a,b)=>labName(a).localeCompare(labName(b),'ro')).map(k=>grp(labName(k),g[k].sort(cmpDateDesc),reportRow)).join('')})():`<div class="year">Rapoarte</div><div class="list">${rs.sort(cmpDateDesc).map(reportRow).join('')}</div>`;
   const multi=labsUsed(pid).length>1;
   return labChips(pid)+(multi&&lab==='all'?`<div class="seg" role="group" aria-label="Sortare rapoarte"><button aria-pressed="${!sortLab}" data-act="labsort" data-v="date">Rapoarte după dată</button><button aria-pressed="${sortLab}" data-act="labsort" data-v="lab">Rapoarte pe laborator</button></div>`:'')+
-   (ps.length?`<div class="card"><h2>Evoluție pe parametru</h2>${multi&&lab==='all'?'<div class="sub" style="margin-bottom:8px">Valorile din laboratoare diferite sunt grupate la un loc. Fiecare are intervalul de referință de la laboratorul lui.</div>':''}<div class="list">${ps.map(n=>{const s=seriesOf(pid,n,lab),l=s[s.length-1],f=flag(l.v,l.lo,l.hi);
-    return open({t:'param',n},`<div class="grow"><div class="t">${esc(n)}</div><div class="s num">${nv(l.v)} ${esc(l.u)}${refText(l.lo,l.hi)?' · ref. '+refText(l.lo,l.hi):''}</div><div style="margin-top:4px">${f?chip(f==='low'?'Sub interval':'Peste interval','bad'):chip('În interval','ok')}${lab==='all'&&multi?chip(esc(labName(l.lab))):''}</div></div>${s.length>1?spark(s,l.lo,l.hi):''}`)}).join('')}</div></div>`:'')+reps}
+   `<div class="seg" role="group" aria-label="Mod de afișare" style="margin-top:10px"><button aria-pressed="${S.lf.view!=='lista'}" data-act="lview" data-v="teme">Pe teme</button><button aria-pressed="${S.lf.view==='lista'}" data-act="lview" data-v="lista">Listă alfabetică</button></div>`+(S.lf.view!=='lista'?themesView(pid,lab):(ps.length?`<div class="card"><h2>Evoluție pe parametru</h2>${multi&&lab==='all'?'<div class="sub" style="margin-bottom:8px">Valorile din laboratoare diferite sunt grupate la un loc. Fiecare are intervalul de referință de la laboratorul lui.</div>':''}<div class="list">${ps.map(n=>{const s=seriesOf(pid,n,lab),l=s[s.length-1],f=flag(l.v,l.lo,l.hi);
+    return open({t:'param',n},`<div class="grow"><div class="t">${esc(n)}</div><div class="s num">${nv(l.v)} ${esc(l.u)}${refText(l.lo,l.hi)?' · ref. '+refText(l.lo,l.hi):''}</div><div style="margin-top:4px">${f?chip(f==='low'?'Sub interval':'Peste interval','bad'):chip('În interval','ok')}${lab==='all'&&multi?chip(esc(labName(l.lab))):''}${new Set(s.map(x=>x.u||'')).size>1?chip('mai multe unități','warn'):''}</div></div>${s.length>1?spark(s.filter(x=>(x.u||'')===(l.u||'')),l.lo,l.hi):''}`)}).join('')}</div></div>`:''))+reps}
 function vLabreport(v){
   const r=get('labreports',v.id);if(!r)return emptyCard('Raportul nu mai există.');const ls=reportLabs(r.id).sort((a,b)=>a.param.localeCompare(b.param,'ro')),vi=get('visits',r.visitId),ds=mine('docs',r.personId).filter(d=>d.reportId===r.id);
   return `<div class="card"><div class="lbl">${fd(r.date)}</div><h2 style="font-size:21px;margin:4px 0 8px">Analize de laborator</h2>
@@ -1119,20 +1284,75 @@ function vLabreport(v){
 function vParam(v){
   const pid=S.pid,all=seriesOf(pid,v.n);if(!all.length)return emptyCard('Nu există valori.');
   let lab=S.lf.lab;if(lab!=='all'&&!all.some(x=>x.lab===(lab==='__none'?'':lab)))lab='all';
-  let s=seriesOf(pid,v.n,lab);const l=s[s.length-1];
-  const units=Array.from(new Set(s.map(x=>x.u||'')));let excl=[];
-  if(units.length>1){excl=s.filter(x=>(x.u||'')!==(l.u||''));s=s.filter(x=>(x.u||'')===(l.u||''))}
+  let s=seriesOf(pid,v.n,lab);const units=[];s.slice().reverse().forEach(x=>{const u=x.u||'';if(units.indexOf(u)<0)units.push(u)});
+  let un=S.pu[v.n];if(units.indexOf(un)<0)un=units[0];
+  const allS=s,excl=s.filter(x=>(x.u||'')!==un);s=s.filter(x=>(x.u||'')===un);const l=s[s.length-1];
+  const uc=units.length>1?`<div class="fchips" role="group" aria-label="Unitate de măsură">${units.map(u=>`<button class="fc" aria-pressed="${u===un}" data-act="punit" data-n="${esc(v.n)}" data-v="${esc(u)}">${esc(u||'fără unitate')} (${allS.filter(x=>(x.u||'')===u).length})</button>`).join('')}</div><div class="sub" style="margin:2px 0 8px">Același parametru are unități diferite. Fiecare unitate e o serie separată; nu convertesc automat între ele.</div>`:'';
   const labsHere=Array.from(new Set(s.map(x=>x.lab))),mixed=labsHere.length>1,sameRef=s.every(x=>x.lo===l.lo&&x.hi===l.hi);
   const raws=Array.from(new Set(all.map(x=>x.raw)));
   const c=tsChart(s,{lo:sameRef?l.lo:undefined,hi:sameRef?l.hi:undefined,noBand:!sameRef,key:'p_'+v.n,label:'Evoluția '+v.n}),f=flag(c.sel.v,c.sel.lo,c.sel.hi);
   const lastL=s[s.length-1];
-  return labChips(pid)+`<div class="card"><div class="lbl">Ultima valoare${lab==='all'&&labsUsed(pid).length>1?'':' · '+esc(labName(lastL.lab))}</div><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><b class="num" style="font-family:var(--font-display);font-size:34px">${nv(lastL.v)}</b><span class="sub">${esc(lastL.u)}${refText(lastL.lo,lastL.hi)?' · ref. '+refText(lastL.lo,lastL.hi):''}</span>${flag(lastL.v,lastL.lo,lastL.hi)?chip('în afara intervalului','bad'):chip('în interval','ok')}</div>
+  return labChips(pid)+uc+`<div class="card"><div class="lbl">Ultima valoare${lab==='all'&&labsUsed(pid).length>1?'':' · '+esc(labName(lastL.lab))}</div><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><b class="num" style="font-family:var(--font-display);font-size:34px">${nv(lastL.v)}</b><span class="sub">${esc(lastL.u)}${refText(lastL.lo,lastL.hi)?' · ref. '+refText(lastL.lo,lastL.hi):''}</span>${flag(lastL.v,lastL.lo,lastL.hi)?chip('în afara intervalului','bad'):chip('în interval','ok')}</div>
     ${c.svg}<div class="readout num"><b>${fd(c.sel.d)}</b> · ${nv(c.sel.v)} ${esc(c.sel.u)}${c.sel.lo!=null||c.sel.hi!=null?' · ref. '+refText(c.sel.lo,c.sel.hi):''}${mixed||labsUsed(pid).length>1?' · '+esc(labName(c.sel.lab)):''}${f?' · <b style="color:var(--bad)">'+(f==='low'?'sub':'peste')+' interval</b>':''}</div>
     ${!sameRef?`<div class="callout warn" style="margin-top:10px">${ic('info')}<div>Laboratoarele au intervale de referință diferite, așa că graficul nu desenează o bandă comună. Fiecare punct e comparat cu intervalul lui.</div></div>`:`<div class="sub" style="margin-top:8px">Intervalul de referință e cel de pe buletin, salvat odată cu fiecare rezultat. Laboratoarele diferite pot avea intervale diferite.</div>`}
-    ${excl.length?`<div class="callout warn" style="margin-top:10px">${ic('alert',16)}<div>${excl.length} valori au altă unitate de măsură (${Array.from(new Set(excl.map(x=>x.u||'fără unitate'))).map(esc).join(', ')}) și nu sunt în grafic, ca să nu amestec scări diferite. Le vezi în listă.</div></div>`:''}
+    ${excl.length?`<div class="sub" style="margin-top:8px">Graficul arată doar valorile în ${esc(un||'fără unitate')}. Cele în alte unități (${excl.length}) sunt în seriile lor, mai sus, și în lista de mai jos.</div>`:''}
     ${raws.length>1?`<div class="sub" style="margin-top:8px">Grupează denumirile: ${raws.map(esc).join(', ')}.</div>`:''}
-    <div style="margin-top:10px"><button class="btn ghost sm" data-act="pgroup" data-n="${esc(v.n)}">${ic('link',14)}Grupează cu alt parametru</button></div></div>
+    <div style="margin-top:10px"><button class="btn ghost sm" data-act="pgroup" data-n="${esc(v.n)}">${ic('link',14)}Grupează cu alt parametru</button> <button class="btn ghost sm" data-act="ptheme" data-n="${esc(v.n)}">${ic('layers',14)}Tema: ${esc(themeNames(v.n))}</button></div></div>
    <div class="card"><h2>Toate valorile</h2><div class="list">${(lab==='all'?all:seriesOf(pid,v.n,lab)).slice().reverse().map(x=>{const ff=flag(x.v,x.lo,x.hi),lb=DB.labs.find(z=>z.id===x.id);return open({t:'labreport',id:lb?lb.reportId:''},`<div class="grow"><div class="t num">${fd(x.d)}</div><div class="s">${esc(labName(x.lab))}${x.raw!==v.n?' · '+esc(x.raw):''}${refText(x.lo,x.hi)?' · ref. '+refText(x.lo,x.hi):''}</div></div><b class="num" style="${ff?'color:var(--bad)':''}">${nv(x.v)} ${esc(x.u)}${ff?(ff==='low'?' ▼':' ▲'):''}</b>${ic('chev',16)}`)}).join('')}</div></div>`}
+
+
+/* ───── Garmin / activitate ───── */
+function wlRow(x){
+  const a=[],b=[];
+  if(x.strN!=null)a.push('forță '+nf(x.strN,0)+(x.strSec!=null?' · '+fmtDur(x.strSec,true):''));
+  if(x.runN!=null)a.push('alergări '+nf(x.runN,0)+(x.runKm!=null?' · '+nf(x.runKm)+' km':''));else if(x.runKm!=null)a.push(nf(x.runKm)+' km alergat');
+  if(x.othN!=null)a.push('alte '+nf(x.othN,0));
+  if(x.sleepScore!=null||x.sleepSec!=null)b.push('somn '+(x.sleepScore!=null?nf(x.sleepScore,0):'')+(x.sleepSec!=null?' · '+fmtDur(x.sleepSec):''));
+  if(x.steps!=null)b.push(wlFmt(WLM[8],x.steps)+' pași');if(x.rhr!=null)b.push('RHR '+nf(x.rhr,0));if(x.stress!=null)b.push('stres '+nf(x.stress,0));
+  if(x.weight!=null)b.push(nf(x.weight)+' kg');if(x.hrv!=null)b.push('HRV '+nf(x.hrv));if(x.vo2!=null)b.push('VO2 '+nf(x.vo2));
+  return open({sheet:'wellness',id:x.id},`${dbox(x.date)}<div class="grow"><div class="t">Săptămâna încheiată pe ${fd(x.date)}</div>${a.length?`<div class="s">${esc(a.join(' · '))}</div>`:''}${b.length?`<div class="s">${esc(b.join(' · '))}</div>`:''}</div>${ic('chev',18)}`)}
+function wlDelta(m,d){return (d<0?'−':'+')+(m.dur?fmtDur(Math.abs(d),false):nf(Math.abs(d),m.d==null?1:m.d)+(m.u?' '+m.u:''))}
+function vWellness(){
+  const l=mine('wellness').sort(cmpDateAsc);
+  const top=`<div class="card"><p class="sub" style="margin-bottom:10px">Date săptămânale din ceas. Faci o captură la ecranul „Ultimele 7 zile” din Garmin Connect, AI-ul citește valorile, iar tu le verifici și le salvezi. HRV și VO2 max se adaugă manual. Aplicația nu se leagă la contul Garmin, iar captura nu se păstrează.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="wl-import">${ic('spark',16)}Importă din captură (AI)</button><button class="btn ghost" data-act="add" data-type="wellness">${ic('plus',16)}Introdu manual</button></div></div>`;
+  if(!l.length)return top;
+  const avail=WLM.filter(m=>l.some(x=>x[m.k]!=null));let mk=S.wm;if(!avail.some(m=>m.k===mk))mk=avail[0]?avail[0].k:'rhr';
+  const m=WLM.find(z=>z.k===mk)||WLM[0],sc=m.dur?1/3600:1;
+  const pts=l.filter(x=>x[mk]!=null).map(x=>({date:x.date,d:x.date,v:x[mk]*sc,u:m.dur?'h':(m.u||'')}));
+  let chart='',stats='';
+  if(pts.length>=2){const c=tsChart(pts,{key:'wl_'+mk,label:'Evoluție: '+m.l});const raw=pts.map(p=>p.v/sc),L=raw[raw.length-1],P=raw[raw.length-2],pv=raw.slice(Math.max(0,raw.length-5),raw.length-1),A=pv.reduce((a,b)=>a+b,0)/pv.length;
+    chart=c.svg+`<div class="readout num"><b>${fd(c.sel.d)}</b> · ${esc(wlFmt(m,c.sel.v/sc))}</div>`;
+    stats=`<div class="chips" style="margin-top:10px">${chip('Ultima: '+esc(wlFmt(m,L)))}${chip('față de săptămâna anterioară: '+(L===P?'la fel':wlDelta(m,L-P)),'m')}${pv.length>1?chip('față de media ultimelor '+pv.length+' săpt.: '+(Math.abs(L-A)<1e-9?'la fel':wlDelta(m,L-A)),'m'):''}</div>`}
+  else chart=`<div class="sub">O singură valoare până acum: ${esc(wlFmt(m,pts[0]?pts[0].v/sc:null))}. Din a doua săptămână apare graficul.</div>`;
+  return top+`<div class="card"><div class="fchips" role="group" aria-label="Indicator">${avail.map(z=>`<button class="fc" aria-pressed="${z.k===mk}" data-act="wm" data-v="${z.k}">${esc(z.l)}</button>`).join('')}</div><div style="margin-top:10px">${chart}</div>${stats}</div>
+   <div class="card"><h2>Săptămâni <span class="chip">${l.length}</span></h2><div class="list" style="margin-top:8px">${l.slice().reverse().map(wlRow).join('')}</div></div>`}
+
+/* ───── stil de viață ───── */
+function hbRow(h){
+  const bits=[h.freq,h.amount!=null?nf(h.amount)+(h.unit?' '+h.unit:''):(h.unit&&h.freq!=='Niciodată'?h.unit:''),h.duration].filter(Boolean);
+  return `<button class="row" data-act="edit" data-type="habit" data-id="${h.id}"><span class="hbe">${h.e||hbEmoji(h.name)}</span><div class="grow"><div class="t">${esc(h.name)}</div><div class="s">${esc(bits.join(' • '))}</div>${h.start?`<div class="s">Început: acum ${agoText(h.start)}${h.end?' · până pe '+fd(h.end):''}</div>`:''}${h.note?`<div class="s">${esc(h.note)}</div>`:''}</div>${ic('chev',18)}</button>`}
+function vHabits(){
+  const l=mine('habits'),cur=l.filter(hbCurrent).sort((a,b)=>a.name.localeCompare(b.name,'ro')),past=l.filter(h=>!hbCurrent(h)).sort((a,b)=>(b.end||'')<(a.end||'')?-1:1);
+  return `<div class="card"><p class="sub" style="margin-bottom:10px">Obiceiurile pe care le urmărești: cât de des, cât de mult și de cât timp. Nu se notează zilnic, ci îl actualizezi când se schimbă ceva. Sunt incluse în PDF-ul pentru medic dacă bifezi.</p><button class="btn" data-act="hb-pick">${ic('plus',16)}Adaugă obicei</button></div>
+   <div class="year">Obiceiuri actuale</div>${cur.length?`<div class="list">${cur.map(hbRow).join('')}</div>`:emptyCard('Niciun obicei notat încă.')}
+   ${past.length?`<details class="more" style="margin-top:14px"><summary>Obiceiuri trecute (${past.length})</summary><div class="list" style="margin-top:8px">${past.map(hbRow).join('')}</div></details>`:''}`}
+function hbPick(){
+  const cur=mine('habits').filter(hbCurrent);
+  openPanel('Ce obicei adaugi?',`<div class="sub" style="margin-bottom:10px">Alege din listă; completezi apoi cât de des, cât și de când.</div><div class="tiles">${HBC.map(h=>{const ex=cur.find(x=>norm(x.name)===norm(h.l));return `<button class="tile" data-act="${ex?'edit':'add'}" data-type="habit"${ex?` data-id="${ex.id}"`:` data-prefill="${J({name:h.l,unit:h.u,freq:'Unele zile'})}"`}><span class="hbe">${h.e}</span><b>${esc(h.l)}</b><span class="meta">${ex?'deja urmărit, editează':esc(h.u)}</span></button>`}).join('')}<button class="tile" data-act="add" data-type="habit"><span class="hbe">✍️</span><b>Alt obicei</b><span class="meta">îl descrii tu</span></button></div>`)}
+
+/* ───── analize pe teme ───── */
+function themesView(pid,lab){
+  const ps=paramsOf(pid).filter(n=>seriesOf(pid,n,lab).length),by={};
+  ps.forEach(n=>themesOf(n).forEach(id=>{(by[id]=by[id]||[]).push(n)}));
+  return THEMES.map(t=>{
+    const got=(by[t.id]||[]).sort((a,b)=>a.localeCompare(b,'ro'));if(t.id==='alte'&&!got.length)return '';
+    const rows=got.map(n=>{const s=seriesOf(pid,n,lab),l=s[s.length-1],f=flag(l.v,l.lo,l.hi),us=new Set(s.map(x=>x.u||'')).size;
+      return open({t:'param',n},`<div class="tr1"><div class="tn">${esc(n)}</div><div class="tv num">${nv(l.v)}<span class="sub"> ${esc(l.u||'')}</span></div></div><div class="tr2"><span class="tl ${f?'bad':'ok'}">${f?(f==='low'?'Sub interval':'Peste interval'):(refText(l.lo,l.hi)?'În interval':'Fără interval de referință')}</span>${us>1?'<span class="sub">mai multe unități</span>':''}${rngBar(l.v,l.lo,l.hi)}</div>`,'row trow')}).join('');
+    const miss=t.p.filter(n=>got.indexOf(n)<0),nb=got.filter(n=>{const s=seriesOf(pid,n,lab),l=s[s.length-1];return flag(l.v,l.lo,l.hi)}).length;
+    return `<section class="card"><h2>${esc(t.l)}<span class="grow"></span>${got.length?chip(got.length+' cu date'):''}${nb?chip(nb+' în afara intervalului','bad'):''}</h2>${rows?`<div class="list" style="margin-top:8px">${rows}</div>`:'<div class="sub" style="margin-top:6px">Fără date încă.</div>'}${miss.length&&t.id!=='alte'?`<details class="more" style="margin-top:8px"><summary>Fără date (${miss.length})</summary><div class="sub" style="margin-top:6px">${miss.map(esc).join(' · ')}</div></details>`:''}</section>`}).join('')}
+function themePanel(n){
+  const cur=themesOf(n),own=!!(META.paramTheme&&META.paramTheme[n]);
+  openPanel('Tema parametrului',`<p style="margin-bottom:10px"><b>${esc(n)}</b> apare în temele bifate. Poate fi în mai multe.</p><div class="multi">${THEMES.map(t=>`<label class="mi"><input type="checkbox" name="th" value="${t.id}"${cur.indexOf(t.id)>=0?' checked':''}><span>${esc(t.l)}</span></label>`).join('')}</div><div class="fbtns"><button class="btn block" data-act="pthemego" data-n="${esc(n)}">Salvează</button>${own?`<button class="btn ghost block" data-act="pthemereset" data-n="${esc(n)}">Revino la tema implicită</button>`:''}</div>`)}
 
 /* ───── vaccinuri, documente, creștere, note ───── */
 function vVaccines(){
@@ -1251,7 +1471,7 @@ function vAnaliza(){
   const tool=(go,ico,t,s)=>`<button class="tile" data-act="open" data-v="${J(go)}"><span class="ti">${ic(ico)}</span><b>${t}</b><span class="meta">${s}</span></button>`;
   return `<div class="card"><h2>Observații automate</h2><div class="sub" style="margin-bottom:10px">Calculate local din datele lui ${esc(p.name)}. Nu sunt diagnostic.</div>
     <div class="list">${ins.length?ins.map(i=>`<button class="ins ${i.k}" data-act="open" data-v="${J(i.go)}"><span class="ib">${ic(i.k==='ok'?'check':i.k==='info'?'info':'alert',16)}</span><span style="flex:1;font-size:14px">${esc(i.t)}</span></button>`).join(''):'<div class="sub">Nimic de semnalat încă. Adaugă date și apar aici.</div>'}</div></div>
-   <div class="tiles">${tool({t:'growth'},'ruler','Creștere și măsurători','Grafice, percentile, ritm')}${tool({t:'labs'},'flask','Evoluția analizelor','Față de intervalul de referință')}${tool({t:'specs'},'layers','Pe specialitate','Tot ce ai la o specialitate')}${tool({t:'costs'},'wallet','Costuri','Pe ani, specialități, servicii')}${tool({t:'vaccines'},'syringe','Calendar de vaccinare','Efectuate, restante, următoare')}${tool({t:'reminders'},'cal','Remindere','Evenimente în Google Calendar')}</div>
+   <div class="tiles">${tool({t:'growth'},'ruler','Creștere și măsurători','Grafice, percentile, ritm')}${tool({t:'labs'},'flask','Evoluția analizelor','Față de intervalul de referință')}${tool({t:'specs'},'layers','Pe specialitate','Tot ce ai la o specialitate')}${tool({t:'costs'},'wallet','Costuri','Pe ani, specialități, servicii')}${tool({t:'wellness'},'watch','Garmin și activitate','Tendințe săptămânale')}${tool({t:'habits'},'leaf','Stil de viață','Obiceiuri actuale și trecute')}${tool({t:'vaccines'},'syringe','Calendar de vaccinare','Efectuate, restante, următoare')}${tool({t:'reminders'},'cal','Remindere','Evenimente în Google Calendar')}</div>
    ${Object.keys(k).length?`<div class="card"><h2>Vizite pe specialitate</h2>${bars(Object.keys(k).map(s=>({label:s,val:k[s]})).sort((a,b)=>b.val-a.val))}</div>`:''}
    ${Object.keys(yrsK).length?`<div class="card"><h2>Vizite pe ani</h2>${bars(Object.keys(yrsK).sort().map(y=>({label:y,val:yrsK[y]})))}</div>`:''}`}
 
@@ -1268,7 +1488,7 @@ function scoped(pid,raw){
     reports:mine('labreports',pid).filter(r=>inP(r.date)&&okSpec('report',r)&&okCond(r)&&sel('r',r)).sort(cmpDateAsc),
     grow:mine('measures',pid).filter(g=>inP(g.date)).sort(cmpDateAsc),vax:mine('vaccines',pid),
     notes:mine('notes',pid).filter(n=>inP(n.date)&&okSpec('note',n)&&okCond(n)&&sel('n',n)),
-    docs:mine('docs',pid).filter(d=>inP(d.date)&&okSpec('doc',d)&&okCond(d)&&sel('d',d))}}
+    docs:mine('docs',pid).filter(d=>inP(d.date)&&okSpec('doc',d)&&okCond(d)&&sel('d',d)),wl:mine('wellness',pid).filter(x=>inP(x.date)).sort(cmpDateAsc),hab:mine('habits',pid).filter(x=>raw||!x.noExport)}}
 const STAT_V={'efectuată':'efectuată','planificată':'planificată','anulată':'anulată'};
 function paramSeries(s){const m={};s.reports.forEach(r=>reportLabs(r.id).forEach(l=>{if(l.v!=null){(m[pcanon(l.param)]=m[pcanon(l.param)]||[]).push(Object.assign({},l,{lab:r.facilityId||''}))}}));Object.keys(m).forEach(k=>m[k].sort(cmpDateAsc));return m}
 const periodsText=c=>condPeriods(c).map(p=>(p.start?fd(p.start):'—')+' – '+(p.end?fd(p.end):'în curs')).join('; ');
@@ -1278,11 +1498,13 @@ function pdfHtml(){
   if(e.fisa)h+=`<h4>Fișă rapidă</h4><table><tr><th>Grupa sanguină</th><td>${esc(p.blood||'—')}</td></tr><tr><th>Alergii</th><td>${(p.allergies||[]).map(esc).join('; ')||'—'}</td></tr><tr><th>Afecțiuni active</th><td>${s.conds.filter(condActive).map(c=>esc(c.name)).join('; ')||'—'}</td></tr><tr><th>Medicamente în curs</th><td>${s.meds.filter(medActive).map(m=>esc(m.name+(m.dose?' ('+m.dose+(m.frequency?', '+m.frequency:'')+')':''))).join('; ')||'—'}</td></tr><tr><th>Medic de familie</th><td>${esc(dname(p.gpId)||'—')}</td></tr></table>`;
   if(e.afectiuni)h+=`<h4>Afecțiuni</h4><table>${s.conds.map(c=>`<tr><td style="width:34%"><b>${esc(c.name)}</b></td><td>${esc(c.specialty||'')}<br>${periodsText(c)}${c.chronic?' · cronică':''}${c.notes?'<br>'+esc(c.notes):''}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
   if(e.medicamente)h+=`<h4>Medicamente</h4><table>${s.meds.map(m=>`<tr><td style="width:34%"><b>${esc(m.name)}</b></td><td>${esc([m.dose,m.frequency].filter(Boolean).join(', '))}<br>${m.start?fd(m.start):'—'} – ${m.end?fd(m.end):'în curs'}${(m.conditionIds||[]).length?'<br>pentru: '+esc((m.conditionIds||[]).map(cname).filter(Boolean).join(', ')):''}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
-  if(e.vizite)h+=`<h4>Vizite la medic</h4><table>${s.vizite.map(v=>`<tr><td style="width:70px">${fd(v.date)}</td><td><b>${esc(v.reason||(v.types||[]).join(', ')||'Vizită')}</b>${v.status==='planificată'?' (planificată)':''}<br>${esc([dname(v.doctorId),(Array.from(specsOf('visit',v))[0]||''),fname(v.facilityId)].filter(Boolean).join(' · '))}${v.diagnosis?'<br>Diagnostic: '+esc(v.diagnosis):''}${v.treatment?'<br>Tratament: '+esc(v.treatment):''}${v.notes?'<br>'+esc(v.notes):''}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
+  if(e.vizite)h+=`<h4>Vizite la medic</h4><table>${s.vizite.map(v=>`<tr><td style="width:70px">${fd(v.date)}</td><td><b>${esc(v.reason||(v.types||[]).join(', ')||'Vizită')}</b>${v.status==='planificată'?' (planificată)':''}<br>${esc([dname(v.doctorId),(Array.from(specsOf('visit',v))[0]||''),fname(v.facilityId)].filter(Boolean).join(' · '))}${v.diagnosis?'<br>Diagnostic: '+esc(v.diagnosis):''}${v.treatment?'<br>Tratament: '+esc(v.treatment):''}${v.notes?'<br>'+esc(v.notes):''}${(v.aiNotes||[]).length?'<br><i>Rezumat AI din documente: '+esc(v.aiNotes.map(a=>a.text).join(' ').replace(/\*\*/g,'').slice(0,600))+'</i>':''}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
   if(e.simptome)h+=`<h4>Simptome</h4><table>${s.syms.map(x=>`<tr><td style="width:34%"><b>${esc(x.name)}</b></td><td>${x.start?fd(x.start):'—'} – ${x.end?fd(x.end):'în curs'}${x.intensity?' · '+esc(x.intensity):''}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
   if(e.analize){const ps=paramSeries(s);h+=`<h4>Analize (evoluție)</h4><table><tr><th>Parametru</th><th>Valori în timp</th><th>Ref.</th></tr>${Object.keys(ps).sort((a,b)=>a.localeCompare(b,'ro')).map(n=>{const a=ps[n],l=a[a.length-1],labs=Array.from(new Set(a.map(x=>x.lab))),us=Array.from(new Set(a.map(x=>x.u||''))),ml=labs.length>1;
     return `<tr><td>${esc(n)}</td><td>${a.map(x=>fmy(x.date)+': '+nv(x.v)+(us.length>1&&x.u?' '+esc(x.u):'')+(ml?' ['+esc(labName(x.lab).slice(0,22))+']':'')).join(' → ')} ${us.length>1?'':esc(l.u||'')}</td><td>${ml||us.length>1?a.map(x=>refText(x.lo,x.hi)).filter((z,i,ar)=>z&&ar.indexOf(z)===i).join('; '):refText(l.lo,l.hi)}</td></tr>`}).join('')||'<tr><td colspan="3">—</td></tr>'}</table>`}
   if(e.crestere)h+=`<h4>Măsurători</h4><table><tr><th>Data</th><th>Înălțime</th><th>Greutate</th><th>Puls</th><th>TA</th></tr>${s.grow.slice(-6).map(g=>`<tr><td>${fd(g.date)}</td><td>${g.height!=null?nf(g.height)+' cm':''}</td><td>${g.weight!=null?nf(g.weight)+' kg':''}</td><td>${g.pulse!=null?nf(g.pulse,0):''}</td><td>${g.sys!=null?nf(g.sys,0)+'/'+nf(g.dia,0):''}</td></tr>`).join('')}</table>`;
+  if(e.stil)h+=`<h4>Stil de viață</h4><table>${s.hab.map(x=>`<tr><td style="width:34%"><b>${esc(x.name)}</b>${hbCurrent(x)?'':' (trecut)'}</td><td>${esc([x.freq,x.amount!=null?nf(x.amount)+(x.unit?' '+x.unit:''):'',x.duration].filter(Boolean).join(', '))}${x.start?'<br>de ~'+agoText(x.start)+(x.end?', până pe '+fd(x.end):''):''}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
+  if(e.garmin)h+=`<h4>Date Garmin (medii pe 7 zile)</h4><table><tr><th>Săpt. încheiată</th><th>Forță</th><th>Alergări</th><th>Somn</th><th>Pași</th><th>RHR</th><th>Greutate</th></tr>${s.wl.slice(-8).map(x=>`<tr><td>${fd(x.date)}</td><td>${x.strN!=null?nf(x.strN,0)+(x.strSec!=null?' · '+fmtDur(x.strSec,true):''):''}</td><td>${x.runN!=null?nf(x.runN,0)+(x.runKm!=null?' · '+nf(x.runKm)+' km':''):''}</td><td>${x.sleepScore!=null?nf(x.sleepScore,0):''}${x.sleepSec!=null?' · '+fmtDur(x.sleepSec):''}</td><td>${x.steps!=null?wlFmt(WLM[8],x.steps):''}</td><td>${x.rhr!=null?nf(x.rhr,0):''}</td><td>${x.weight!=null?nf(x.weight)+' kg':''}</td></tr>`).join('')||'<tr><td colspan="7">—</td></tr>'}</table>`;
   if(e.vaccin)h+=`<h4>Vaccinuri</h4><table>${s.vax.map(v=>`<tr><td>${esc(v.name)}</td><td>${v.date?fd(v.date):'—'}</td><td>${esc(v.status)}</td></tr>`).join('')||'<tr><td>—</td></tr>'}</table>`;
   if(e.note)h+=`<h4>Note</h4>${s.notes.map(n=>`<p><b>${esc(n.title)}</b> (${fd(n.date)}) ${esc(n.text)}</p>`).join('')||'—'}`;
   if(e.docs)h+=`<h4>Anexe (${s.docs.length})</h4>${s.docs.map(d=>d.type==='img'?`<div class="anx" data-anx="${d.id}"><div class="sk">${esc(d.name)} · ${fd(d.date)}</div></div>`:`<div class="sk">${esc(d.name)} · ${fd(d.date)} (PDF, se atașează separat)</div>`).join('')}`;
@@ -1297,12 +1519,14 @@ function aiPackage(){
   if(sec.afectiuni)o.afectiuni=s.conds.map(c=>({nume:c.name,specialitate:c.specialty,perioade:condPeriods(c).map(p=>({de_la:p.start,pana_la:p.end})),cronica:c.chronic,note:c.notes}));
   if(sec.medicamente)o.medicamente=s.meds.map(m=>({nume:m.name,descriere:m.description,dozaj:m.dose,frecventa:m.frequency,inceput:m.start,final:m.end,pentru:(m.conditionIds||[]).map(cname),note:m.notes}));
   if(sec.simptome)o.simptome=s.syms.map(x=>({nume:x.name,inceput:x.start,final:x.end,intensitate:x.intensity,afectiuni:(x.conditionIds||[]).map(cname)}));
-  if(sec.vizite)o.vizite=s.vizite.map(v=>({data:v.date,stare:v.status,medic:dn(v.doctorId),specialitate:Array.from(specsOf('visit',v))[0]||'',tipuri:v.types,motiv:v.reason,diagnostic:v.diagnosis,tratament_recomandat:v.treatment,concluzii:v.notes,afectiuni:(v.conditionIds||[]).map(cname),urmator_control:v.next}));
+  if(sec.vizite)o.vizite=s.vizite.map(v=>({data:v.date,stare:v.status,medic:dn(v.doctorId),specialitate:Array.from(specsOf('visit',v))[0]||'',tipuri:v.types,motiv:v.reason,diagnostic:v.diagnosis,tratament_recomandat:v.treatment,concluzii:v.notes,concluzii_ai_din_documente:(v.aiNotes||[]).map(a=>a.text).join(' '),afectiuni:(v.conditionIds||[]).map(cname),urmator_control:v.next}));
   if(sec.analize){const ps=paramSeries(s),lm={};let ln=0;const lbl=id=>{if(!id)return '';if(an){if(!lm[id])lm[id]='Laborator '+(++ln);return lm[id]}return fname(id)};
     o.analize=Object.keys(ps).map(n=>{const a=ps[n],l=a[a.length-1];return {parametru:n,unitate:l.u,valori:a.map(x=>({data:x.date,valoare:x.v,unitate:x.u,referinta:refText(x.lo,x.hi),laborator:lbl(x.lab)}))}})}
   if(sec.crestere)o.masuratori=s.grow.map(g=>({data:g.date,inaltime_cm:g.height,greutate_kg:g.weight,puls:g.pulse,tensiune:g.sys!=null?g.sys+'/'+g.dia:null}));
   if(sec.vaccin)o.vaccinuri=s.vax.map(v=>({vaccin:v.name,varsta_recomandata:v.age,data:v.date,stare:v.status}));
   if(sec.note)o.note=s.notes.map(n=>({data:n.date,titlu:n.title,text:n.text}));
+  if(sec.stil)o.stil_de_viata=s.hab.map(x=>({obicei:x.name,frecventa:x.freq,cantitate:x.amount!=null?x.amount+' '+(x.unit||''):'',durata:x.duration,de_cand:x.start,pana_cand:x.end}));
+  if(sec.garmin)o.activitate_garmin=s.wl.map(x=>({saptamana_incheiata:x.date,antrenamente_forta:x.strN,durata_forta:x.strSec!=null?fmtDur(x.strSec,true):null,alergari:x.runN,km_alergare:x.runKm,alte_activitati:x.othN,scor_somn:x.sleepScore,somn_mediu:x.sleepSec!=null?fmtDur(x.sleepSec):null,pasi_medie:x.steps,puls_repaus:x.rhr,stres:x.stress,greutate_kg:x.weight,hrv:x.hrv,vo2max:x.vo2}));
   const task=PRESETS[e.preset]+' Răspunde în română. Nu pune diagnostic; sugerează ce să discut cu medicul.';
   if(e.fmt==='json')return JSON.stringify(Object.assign({sarcina:task},o),null,1);
   const L=(a,f)=>a&&a.length?a.map(f).join('\n'):'-';let t=`# Dosar medical\nPacient: ${o.pacient}\nPerioadă: ${o.perioada}\n`;
@@ -1314,6 +1538,8 @@ function aiPackage(){
   if(o.analize)t+=`\n## Analize\n${L(o.analize,a=>`- ${a.parametru}: ${a.valori.map(v=>v.data+'='+nv(v.valoare)+' '+(v.unitate||'')+' (ref. '+(v.referinta||'-')+(v.laborator?', '+v.laborator:'')+')').join('; ')}`)}\n`;
   if(o.masuratori)t+=`\n## Măsurători\n${L(o.masuratori,g=>`- ${g.data}: ${[g.inaltime_cm!=null?nf(g.inaltime_cm)+' cm':'',g.greutate_kg!=null?nf(g.greutate_kg)+' kg':'',g.puls!=null?'puls '+g.puls:'',g.tensiune?'TA '+g.tensiune:''].filter(Boolean).join(', ')}`)}\n`;
   if(o.vaccinuri)t+=`\n## Vaccinuri\n${L(o.vaccinuri,v=>`- ${v.vaccin} (${v.varsta_recomandata||''}): ${v.data||'—'} [${v.stare}]`)}\n`;
+  if(o.stil_de_viata)t+=`\n## Stil de viață\n${L(o.stil_de_viata,x=>`- ${x.obicei}: ${[x.frecventa,x.cantitate,x.durata].filter(Boolean).join(', ')}${x.de_cand?' | din '+x.de_cand:''}${x.pana_cand?' | până pe '+x.pana_cand:''}`)}\n`;
+  if(o.activitate_garmin)t+=`\n## Activitate (Garmin, medii pe 7 zile)\n${L(o.activitate_garmin,x=>`- ${x.saptamana_incheiata}: forță ${x.antrenamente_forta??'-'} (${x.durata_forta||'-'}), alergări ${x.alergari??'-'} (${x.km_alergare??'-'} km), somn ${x.scor_somn??'-'} / ${x.somn_mediu||'-'}, pași ${x.pasi_medie??'-'}, puls repaus ${x.puls_repaus??'-'}, stres ${x.stres??'-'}, greutate ${x.greutate_kg??'-'}, HRV ${x.hrv??'-'}, VO2 max ${x.vo2max??'-'}`)}\n`;
   if(o.note)t+=`\n## Note\n${L(o.note,n=>`- ${n.data} ${n.titlu}: ${n.text}`)}\n`;
   return t+`\n---\nSarcină: ${task}\n`}
 const ITEMS={afectiuni:{k:'c',list:r=>r.conds,label:c=>c.name+(condActive(c)?'':' (încheiată)')},medicamente:{k:'m',list:r=>r.meds,label:m=>m.name+(m.dose?' · '+m.dose:'')},vizite:{k:'v',list:r=>r.vizite,label:v=>fd(v.date)+' · '+(v.reason||(v.types||[]).join(', ')||'Vizită')},analize:{k:'r',list:r=>r.reports,label:r=>fd(r.date)+' · '+labName(r.facilityId||'')},simptome:{k:'s',list:r=>r.syms,label:x=>x.name+(x.start?' ('+fd(x.start)+')':'')},note:{k:'n',list:r=>r.notes,label:n=>n.title+' · '+fd(n.date)},docs:{k:'d',list:r=>r.docs,label:d=>d.name+' · '+fd(d.date)}};
@@ -1324,7 +1550,7 @@ function chkb(k,t,x){
   return `<div class="chkw"><label class="chk"><input type="checkbox" data-act="exsec" data-k="${k}" ${on?'checked':''}><span>${t}${x?`<span class="sub" style="display:block">${x}</span>`:''}</span></label>${extra}</div>`}
 function vExport(){
   const e=S.ex,p=person();
-  const scope=`<div class="card"><h2>Ce să includ</h2>${chkb('fisa','Fișa rapidă','Grupă sanguină, alergii, afecțiuni active, medicamente în curs')}${chkb('afectiuni','Afecțiuni')}${chkb('medicamente','Medicamente')}${chkb('vizite','Vizite la medic')}${chkb('analize','Analize')}${chkb('vaccin','Vaccinuri')}${chkb('crestere','Măsurători și creștere')}${chkb('simptome','Simptome')}${chkb('note','Note')}${chkb('docs','Documente ca anexe','Pozele apar în PDF, fișierele PDF se listează')}
+  const scope=`<div class="card"><h2>Ce să includ</h2>${chkb('fisa','Fișa rapidă','Grupă sanguină, alergii, afecțiuni active, medicamente în curs')}${chkb('afectiuni','Afecțiuni')}${chkb('medicamente','Medicamente')}${chkb('vizite','Vizite la medic')}${chkb('analize','Analize')}${chkb('vaccin','Vaccinuri')}${chkb('crestere','Măsurători și creștere')}${chkb('simptome','Simptome')}${chkb('note','Note')}${chkb('stil','Stil de viață','Obiceiuri actuale și trecute')}${chkb('garmin','Date Garmin (săptămânal)','Antrenamente, somn, puls de repaus, greutate, HRV, VO2 max')}${chkb('docs','Documente ca anexe','Pozele apar în PDF, fișierele PDF se listează')}
     <label class="f" style="margin-top:10px">Doar o afecțiune (opțional)<select id="exc"><option value="all">Toate afecțiunile</option>${mine('conditions').slice().sort(cmpName).map(c=>`<option value="${c.id}" ${e.cond===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
     <div class="two"><label class="f">Perioadă<select id="exp"><option value="1y" ${e.period==='1y'?'selected':''}>Ultimul an</option><option value="3y" ${e.period==='3y'?'selected':''}>Ultimii 3 ani</option><option value="all" ${e.period==='all'?'selected':''}>Tot istoricul</option></select></label>
     <label class="f">Specialitate<select id="exs"><option value="all">Toate</option>${META.specialties.map(s=>`<option ${e.spec===s?'selected':''}>${esc(s)}</option>`).join('')}</select></label></div></div>`;
@@ -1355,7 +1581,7 @@ function vSetari(){
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="backup">${ic('dl',16)}Exportă tot</button><button class="btn ghost" data-act="restorepick">${ic('upload',16)}Restaurează</button></div>
     <div class="sep"></div><p class="sub" style="margin-bottom:10px"><b>Arhivă lizibilă (ZIP):</b> tabele CSV (se deschid în Excel), un JSON cu toate datele și documentele originale. E pentru arhivare sau dacă vrei vreodată să muți datele în altă aplicație. Din ea nu se poate restaura direct în această aplicație, pentru asta folosești „Exportă tot”.</p><button class="btn ghost" data-act="zipexport">${ic('dl',16)}Exportă arhiva ZIP</button><p class="sub" id="stor" style="margin-top:10px"></p></div>
    <div class="card"><h2>Instalare</h2><div class="sub">iPhone: în Safari, Partajează, apoi „Adaugă pe ecranul principal”.<br>Android: în Chrome, meniul ⋮, apoi „Instalează aplicația”.<br>Laptop: în Chrome sau Edge, pictograma de instalare din bara de adrese.</div></div>
-   <div class="card"><h2>Ce urmează în aplicație</h2><ul class="road"><li><b>Etapa 2 (gata):</b> sincronizare prin Google Drive între telefoane și laptop, cu criptare opțională cu parola comună.</li><li><b>Etapa 3 (gata):</b> scanarea documentelor și extragerea valorilor din analize, cu confirmarea ta, plus AI direct cu cheia ta.</li><li><b>Mai târziu:</b> date de la ceas (Garmin / Google Health), dacă se poate fără server.</li></ul><div class="sub" style="margin-top:8px">Versiunea ${VERSION}</div></div>
+   <div class="card"><h2>Ce urmează în aplicație</h2><ul class="road"><li><b>Etapa 2 (gata):</b> sincronizare prin Google Drive între telefoane și laptop, cu criptare opțională cu parola comună.</li><li><b>Etapa 3 (gata):</b> scanarea documentelor și extragerea valorilor din analize, cu confirmarea ta, plus AI direct cu cheia ta.</li><li><b>Etapa 3.2 (gata):</b> buton „+”, note cu dată, concluzii AI în vizită, audio, Garmin săptămânal, analize pe teme și unități, stil de viață.</li><li><b>Mai târziu:</b> import automat de la ceas, dacă devine posibil fără server.</li></ul><div class="sub" style="margin-top:8px">Versiunea ${VERSION}</div></div>
    <div class="card"><h2>Date de pe acest dispozitiv</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-act="demo">Încarcă date de exemplu</button><button class="btn ghost danger" data-act="wipeask">${ic('trash',16)}Șterge tot</button></div></div>`}
 
 /* ───── detalii în panouri ───── */
@@ -1366,27 +1592,54 @@ function openDetail(kind,id){
   if(kind==='vax'){rec=g('vaccines');if(!rec)return;title=rec.name;body=`<div class="kv">${kvRow('Stare',esc(rec.status))}${kvRow('Data',rec.date?fd(rec.date):'')}${kvRow('Vârsta recomandată',esc(rec.age||''))}${kvRow('Note',esc(rec.note||''))}</div>${rec.status==='programat'&&rec.date?`<div style="margin-top:12px">${calAnchor('vax',rec.id)}</div>`:''}`;type='vax'}
   if(kind==='measure'){rec=g('measures');if(!rec)return;title='Măsurători · '+fd(rec.date);body=`<div class="kv">${kvRow('Înălțime',rec.height!=null?nf(rec.height)+' cm':'')}${kvRow('Greutate',rec.weight!=null?nf(rec.weight)+' kg':'')}${kvRow('Puls',rec.pulse!=null?nf(rec.pulse,0)+' bpm':'')}${kvRow('Tensiune',rec.sys!=null?nf(rec.sys,0)+'/'+nf(rec.dia,0)+' mmHg':'')}${kvRow('Sursă',esc(rec.source||''))}${kvRow('Note',esc(rec.note||''))}</div>`}
   if(kind==='reminder'){rec=g('reminders');if(!rec)return;title=rec.title;body=`<div class="kv">${kvRow('Data',fd(rec.date))}${kvRow('Tip',esc(rec.kind||''))}</div><div style="margin-top:12px">${calAnchor('reminder',rec.id)}</div>`;type=rec.refType==='visit'?null:'reminder'}
+  if(kind==='wellness'){rec=g('wellness');if(!rec)return;title='Săptămâna încheiată pe '+fd(rec.date);body=`<div class="kv">${WLM.map(m=>rec[m.k]!=null?kvRow(m.l,esc(wlFmt(m,rec[m.k]))):'').join('')}${kvRow('Sursă',esc(rec.source||''))}${kvRow('Note',esc(rec.note||''))}</div>`}
   if(!rec)return;
   openPanel(title,body+(type?`<div style="margin-top:14px">${editBtn(type,rec.id)}</div>`:''))}
 async function openDoc(id){
   const f=get('docs',id);if(!f)return;const links=[];const v=get('visits',f.visitId),r=get('labreports',f.reportId);
   if(v)links.push(lnk({t:'visit',id:v.id},vlabel(v)));if(r)links.push(lnk({t:'labreport',id:r.id},'Analize din '+fd(r.date)));
-  const b=await getBlob(id),url=b?URL.createObjectURL(b):'';let prev;
+  let b=await getBlob(id);if(b&&f.type==='audio'&&!/^audio\//.test(b.type))b=new Blob([b],{type:audioMime(f)});const url=b?URL.createObjectURL(b):'';let prev;const nts=mine('notes',f.personId).filter(n=>n.docId===f.id).sort(cmpDateDesc);
   if(!b)prev='<div class="callout warn">Fișierul nu a fost găsit pe acest dispozitiv.</div>';
+  else if(f.type==='audio')prev=`<audio controls preload="metadata" src="${url}" style="width:100%"></audio><div class="sub" style="margin-top:6px">Înregistrare audio, ${nf(b.size/1048576,1)} MB.</div>`;
   else if(/^image\//.test(b.type))prev=`<img src="${url}" alt="${esc(f.name)}" style="width:100%;border-radius:10px;background:#fff">`;
   else prev=`<div class="callout">${ic('pdf')}<div>Document PDF, ${nf(b.size/1048576,1)} MB.</div></div>`;
-  const ext=b&&/pdf/.test(b.type)?'.pdf':b&&/svg/.test(b.type)?'.svg':b&&/png/.test(b.type)?'.png':'.jpg';
+  const ext=f.type==='audio'?audioExt(f):b&&/pdf/.test(b.type)?'.pdf':b&&/svg/.test(b.type)?'.svg':b&&/png/.test(b.type)?'.png':'.jpg';
   openPanel(f.name,`${prev}<div class="kv" style="margin-top:14px">${kvRow('Data',fd(f.date))}${kvRow('Tip',esc(f.tag||''))}${kvRow('Legat de',links.join('<br>'))}${kvRow('Afecțiuni',condChips(f.conditionIds))}</div>
-   ${f.text?`<details class="more" style="margin-top:12px"><summary>Text transcris de AI (se caută în Istoric)</summary><pre class="out" style="margin-top:8px;max-height:300px">${esc(f.text)}</pre><div style="margin-top:8px"><button class="btn ghost sm danger" data-act="ai-ocrdel" data-id="${f.id}">Șterge transcrierea</button></div></details>`:''}
-   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${b?`<button class="btn sm" data-act="ai-explain" data-id="${f.id}">${ic('spark',14)}Explică-mi documentul</button><a class="btn ghost sm" href="${url}" target="_blank" rel="noopener">${ic('file',14)}Deschide</a><a class="btn ghost sm" href="${url}" download="${esc(f.name)}${ext}">${ic('dl',14)}Descarcă</a>`:''}${editBtn('doc',f.id)}${b?`<button class="btn ghost sm" data-act="ai-doc" data-id="${f.id}">${ic('spark',14)}Extrage date cu AI</button><button class="btn ghost sm" data-act="ai-ocr" data-id="${f.id}">${ic('type',14)}${f.text?'Transcrie din nou':'Transcrie textul (OCR)'}</button>`:''}</div>`,true)}
-function openNote(id){const n=get('notes',id);if(!n)return;openPanel(n.title,`<div class="sub">${fd(n.date)}</div><p style="margin-top:10px;white-space:pre-wrap">${esc(n.text)}</p>${(n.conditionIds||[]).length?`<div class="chips" style="margin-top:10px">${condChips(n.conditionIds)}</div>`:''}<div style="margin-top:14px">${editBtn('note',n.id)}</div>`)}
+   ${(()=>{return `<div class="sep"></div><div class="lbl">Note legate (${nts.length})</div>${nts.length?`<div class="list" style="margin-top:6px">${nts.map(noteRow).join('')}</div>`:''}<div style="margin-top:8px">${btnAdd('note','Notă la document',{docId:f.id,visitId:f.visitId||'',date:f.date,title:'Notă · '+f.name})}</div>`})()}
+   ${f.text?`<details open class="more" style="margin-top:12px"><summary>${f.type==='audio'?'Transcriere (se caută în Istoric)':'Text transcris de AI (se caută în Istoric)'}</summary><pre class="out" style="margin-top:8px;max-height:300px">${esc(f.text)}</pre><div style="margin-top:8px"><button class="btn ghost sm danger" data-act="ai-ocrdel" data-id="${f.id}">Șterge transcrierea</button></div></details>`:''}
+   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${b&&f.type!=='audio'?`<button class="btn sm" data-act="ai-explain" data-id="${f.id}">${ic('spark',14)}Explică-mi documentul</button>`:''}${b?`<a class="btn ghost sm" href="${url}" target="_blank" rel="noopener">${ic('file',14)}Deschide</a><a class="btn ghost sm" href="${url}" download="${esc(f.name)}${ext}">${ic('dl',14)}Descarcă</a>`:''}${editBtn('doc',f.id)}${b&&f.type!=='audio'?`<button class="btn ghost sm" data-act="ai-doc" data-id="${f.id}">${ic('spark',14)}Extrage date cu AI</button><button class="btn ghost sm" data-act="ai-ocr" data-id="${f.id}">${ic('type',14)}${f.text?'Transcrie din nou':'Transcrie textul (OCR)'}</button>`:''}${f.type==='audio'?`<button class="btn sm" data-act="ai-trpaste" data-id="${f.id}">${ic('type',14)}${f.text?'Editează transcrierea':'Lipește transcrierea'}</button>${f.text?`<button class="btn ghost sm" data-act="ai-sumaudio" data-id="${f.id}">${ic('spark',14)}Rezumă cu AI</button>`:''}`:''}</div>${f.type==='audio'&&!f.text?`<div class="callout" style="margin-top:12px">${ic('info')}<div>Aplicația nu trimite fișiere audio către AI. Transcrie înregistrarea în telefon, lipește textul aici, apoi îl poți rezuma cu AI.</div></div>`:''}`,true)}
+function openNote(id){const n=get('notes',id);if(!n)return;const dc=get('docs',n.docId),vi=get('visits',n.visitId);openPanel(n.title,`<div class="sub">${fd(n.date)}</div>${dc||vi?`<div class="kv" style="margin-top:8px">${kvRow('Document',dc?lnk({doc:dc.id},dc.name):'')}${kvRow('Vizită',vi?lnk({t:'visit',id:vi.id},vlabel(vi)):'')}</div>`:''}<p style="margin-top:10px;white-space:pre-wrap">${esc(n.text)}</p>${(n.conditionIds||[]).length?`<div class="chips" style="margin-top:10px">${condChips(n.conditionIds)}</div>`:''}<div style="margin-top:14px">${editBtn('note',n.id)}</div>`)}
+
+
+/* ───── buton master „+” ───── */
+function fabCtx(){const v=S.nav.length?S.nav[S.nav.length-1]:null,c={};if(!v)return c;
+  if(v.t==='visit'){const x=get('visits',v.id);if(x){c.visitId=x.id;c.conditionIds=x.conditionIds||[]}}
+  else if(v.t==='condition')c.conditionIds=[v.id];else if(v.t==='spec')c.specialty=v.name;return c}
+function fabPanel(){
+  const c=fabCtx(),pick=(...ks)=>{const o={};ks.forEach(k=>{if(c[k]!=null)o[k]=c[k]});return o};
+  const it=(type,ico,t,s,p)=>`<button class="tile" data-act="add" data-type="${type}" data-prefill="${J(p||{})}"><span class="ti">${ic(ico)}</span><b>${t}</b><span class="meta">${s}</span></button>`;
+  const ctxLine=c.visitId?'Se leagă automat de vizita deschisă.':c.conditionIds?'Se leagă automat de afecțiunea deschisă.':c.specialty?'Se leagă de specialitatea deschisă.':'';
+  openPanel('Ce adaugi?',`${ctxLine?`<div class="sub" style="margin-bottom:10px">${ctxLine}</div>`:''}<div class="tiles">
+    ${it('visit','cross','Vizită','la medic',pick('conditionIds','specialty'))}
+    ${it('labreport','flask','Analize','buletin, valori',pick('visitId','conditionIds','specialty'))}
+    ${it('doc','file','Document sau audio','poză, PDF, înregistrare',pick('visitId','conditionIds'))}
+    ${it('condition','heart','Afecțiune','cu perioade',pick('specialty'))}
+    ${it('symptom','pulse','Simptom','episod',pick('visitId','conditionIds'))}
+    ${it('med','pill','Medicament','dozaj, perioadă',pick('visitId','conditionIds'))}
+    ${it('vax','syringe','Vaccin','',{})}
+    ${it('measure','ruler','Măsurători','greutate, înălțime, tensiune',{})}
+    ${it('note','note','Notă','cu dată și legături',pick('visitId','conditionIds'))}
+    ${it('reminder','bell','Reminder','în Calendar',{})}
+    <button class="tile" data-act="wl-import"><span class="ti">${ic('watch')}</span><b>Captură Garmin</b><span class="meta">citită cu AI</span></button>
+    ${it('wellness','watch','Săptămână Garmin','manual',{})}
+    <button class="tile" data-act="hb-pick"><span class="ti">${ic('leaf')}</span><b>Obicei</b><span class="meta">stil de viață</span></button></div>`)}
 
 /* ───── router și desen ───── */
 const ROOTS=['profil','istoric','analiza','export','setari'];
-const TITLES={conditions:['Afecțiuni',['condition','Afecțiune']],visits:['Vizite la medic',['visit','Vizită']],symptoms:['Simptome',['symptom','Simptom']],meds:['Medicamente',['med','Medicament']],labs:['Analize',['labreport','Analize']],vaccines:['Vaccinuri',['vax','Vaccin']],docs:['Documente',['doc','Document']],growth:[null,['measure','Măsurători']],notes:['Note',['note','Notă']],doctors:['Medici',['doctor','Medic']],facilities:['Unități medicale',['facility','Unitate']],specs:['Pe specialitate',null],costs:['Costuri',null],reminders:['Remindere',['reminder','Reminder']],condition:['Afecțiune',null],visit:['Vizită',null],labreport:['Raport de analize',null],param:[null,null],doctor:['Medic',null],facility:['Unitate medicală',null],spec:[null,null]};
+const TITLES={conditions:['Afecțiuni',['condition','Afecțiune']],visits:['Vizite la medic',['visit','Vizită']],symptoms:['Simptome',['symptom','Simptom']],meds:['Medicamente',['med','Medicament']],labs:['Analize',['labreport','Analize']],vaccines:['Vaccinuri',['vax','Vaccin']],docs:['Documente',['doc','Document']],growth:[null,['measure','Măsurători']],notes:['Note',['note','Notă']],doctors:['Medici',['doctor','Medic']],facilities:['Unități medicale',['facility','Unitate']],specs:['Pe specialitate',null],costs:['Costuri',null],reminders:['Remindere',['reminder','Reminder']],wellness:['Garmin și activitate',null],habits:['Stil de viață',null],condition:['Afecțiune',null],visit:['Vizită',null],labreport:['Raport de analize',null],param:[null,null],doctor:['Medic',null],facility:['Unitate medicală',null],spec:[null,null]};
 function route(v){
   if(!DB.persons.length)return {root:1,html:vWelcome(),welcome:1};
-  const M={profil:vProfil,istoric:vIstoric,analiza:vAnaliza,export:vExport,setari:vSetari,conditions:vConditions,condition:vCondition,visits:vVisits,visit:vVisit,symptoms:vSymptoms,meds:vMeds,labs:vLabs,labreport:vLabreport,param:vParam,vaccines:vVaccines,docs:vDocs,growth:vGrowth,notes:vNotes,doctors:vDoctors,doctor:vDoctor,facilities:vFacilities,facility:vFacility,specs:vSpecs,spec:vSpec,reminders:vReminders,costs:vCosts};
+  const M={profil:vProfil,istoric:vIstoric,analiza:vAnaliza,export:vExport,setari:vSetari,conditions:vConditions,condition:vCondition,visits:vVisits,visit:vVisit,symptoms:vSymptoms,meds:vMeds,labs:vLabs,labreport:vLabreport,param:vParam,vaccines:vVaccines,docs:vDocs,growth:vGrowth,notes:vNotes,doctors:vDoctors,doctor:vDoctor,facilities:vFacilities,facility:vFacility,specs:vSpecs,spec:vSpec,reminders:vReminders,costs:vCosts,wellness:vWellness,habits:vHabits};
   const fn=M[v.t];if(!fn)return {root:1,html:vProfil()};
   if(ROOTS.indexOf(v.t)>=0)return {root:1,html:fn(v)};
   const T=TITLES[v.t]||[null,null];let title=T[0];if(v.t==='param')title=v.n;if(v.t==='spec')title=v.name;if(v.t==='growth')title=isChild(person())?'Creștere și măsurători':'Măsurători';
@@ -1409,7 +1662,7 @@ function render(keep){
   $('#top').innerHTML=header(r)+(dbError?`<div class="demo bad">${ic('alert',16)}<span>${esc(dbError)}</span></div>`:'');
   $('#main').innerHTML=r.html;
   $('#tabs').innerHTML=r.welcome?'':TABS.map(t=>`<button class="tab" ${S.tab===t[0]?'aria-current="page"':''} data-act="tab" data-v="${t[0]}">${ic(t[2],22)}${t[1]}</button>`).join('');
-  $('.tabs').hidden=!!r.welcome;
+  $('.tabs').hidden=!!r.welcome;$('#fab').hidden=!!r.welcome;
   if(!keep)window.scrollTo(0,0);
   hydrateThumbs();
   const st=$('#stor');if(st&&navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{const el=$('#stor');if(el)el.textContent='Spațiu folosit: '+nf((e.usage||0)/1048576,1)+' MB. '+(persisted?'Browserul a acceptat păstrarea permanentă a datelor.':'Browserul poate șterge datele dacă rămâne fără spațiu, de aceea fă copii de rezervă.')})}
@@ -1519,7 +1772,7 @@ function removeLocal(t,id){const a=DB[t],i=a.findIndex(x=>x.id===id);if(i>=0)a.s
   if(t==='labreports')DB.labs.filter(l=>l.reportId===id).forEach(l=>{const j=DB.labs.indexOf(l);if(j>=0)DB.labs.splice(j,1);idbWrite('labs',s=>s.delete(l.id))})}
 function contentOf(t,r){const o={t,rec:r};if(t==='labreports')o.labs=DB.labs.filter(l=>l.reportId===r.id);return o}
 function applyContent(c){
-  if(c.deleted)return false;
+  if(c.deleted||!DB[c.t])return false;
   putLocal(c.t,c.rec);
   if(c.t==='labreports'){DB.labs.filter(l=>l.reportId===c.rec.id).forEach(l=>{const j=DB.labs.indexOf(l);if(j>=0)DB.labs.splice(j,1);idbWrite('labs',s=>s.delete(l.id))});(c.labs||[]).forEach(l=>putLocal('labs',l))}
   return true}
@@ -1571,10 +1824,10 @@ async function syncNow(inter){
       jobs.push(()=>pull(name,rf,null,null))}
     await pool(jobs,4,(d,n)=>{SY.prog=d+' / '+n;refreshSyncUi()});
     /* 4. setări comune */
-    {const name='m_meta.json',rf=remote[name],sm=map[name],mine=()=>({specialties:META.specialties,visitTypes:META.visitTypes,currency:META.currency,genericCal:META.genericCal,paramAliases:META.paramAliases||{},updatedAt:META.updatedAt||0});
+    {const name='m_meta.json',rf=remote[name],sm=map[name],mine=()=>({specialties:META.specialties,visitTypes:META.visitTypes,currency:META.currency,genericCal:META.genericCal,paramAliases:META.paramAliases||{},paramTheme:META.paramTheme||{},updatedAt:META.updatedAt||0});
       const upM=async()=>{const p=await packRec({t:'meta',rec:mine()}),res=await putFile(name,p.body,p.mime,rf&&rf.id);map[name]={fid:res.id,mt:res.modifiedTime,ut:META.updatedAt||0,enc:wantEnc}};
       const pullM=async()=>{const {c,enc}=await unpackRec(await getFile(rf.id)),ru=(c.rec&&c.rec.updatedAt)||0;
-        if(ru>(META.updatedAt||0)){['specialties','visitTypes','currency','genericCal','paramAliases'].forEach(k=>{if(c.rec[k]!=null)META[k]=c.rec[k]});META.updatedAt=ru;idbWrite('meta',s=>s.put(META))}
+        if(ru>(META.updatedAt||0)){['specialties','visitTypes','currency','genericCal','paramAliases','paramTheme'].forEach(k=>{if(c.rec[k]!=null)META[k]=c.rec[k]});META.updatedAt=ru;idbWrite('meta',s=>s.put(META))}
         else if((META.updatedAt||0)>ru)return upM();
         map[name]={fid:rf.id,mt:rf.modifiedTime,ut:ru,enc}};
       if(!rf)await upM();else if(!sm||rf.modifiedTime!==sm.mt)await pullM();else if((META.updatedAt||0)>sm.ut||(!!sm.enc!==wantEnc))await upM()}
@@ -1804,15 +2057,15 @@ function showDocResult(d,r){
     ${r.diagnosis?`<div class="sep"></div><div class="lbl">Diagnostic</div><p>${esc(r.diagnosis)}</p>`:''}${r.treatment?`<div class="sep"></div><div class="lbl">Tratament / recomandări</div><p style="white-space:pre-wrap">${esc(r.treatment)}</p>`:''}${r.summary?`<div class="sep"></div><div class="lbl">Rezumat</div><p>${esc(r.summary)}</p>`:''}
     ${meds.length?`<div class="sep"></div><div class="lbl">Medicamente (${meds.length})</div><div class="list" style="margin-top:6px">${meds.map((m,i)=>`<div class="row"><div class="grow"><div class="t">${esc(m.name)}</div><div class="s">${esc([m.dose,m.frequency,m.duration].filter(Boolean).join(' · '))}</div></div><button class="btn ghost sm" data-act="ai-med" data-i="${i}">${ic('plus',14)}Adaugă</button></div>`).join('')}</div>`:''}
     ${rows.length?`<div class="sep"></div><div class="lbl">Valori de laborator (${rows.length})</div><div class="s sub" style="margin-top:4px">${rows.slice(0,6).map(x=>esc(x.param+' '+x.val+(x.u?' '+x.u:''))).join(' · ')}${rows.length>6?' …':''}</div>`:''}
-    <div class="fbtns"><button class="btn block" data-act="ai-visit">${ic('cross',16)}Creează vizită din document</button>${rows.length?`<button class="btn ghost block" data-act="ai-labs">${ic('flask',16)}Creează raport de analize</button>`:''}</div>`;
+    <div class="fbtns">${d.visitId?`<button class="btn block" data-act="ai-sumvisit">${ic('check',16)}Salvează rezumatul în vizită</button>`:''}<button class="btn block" data-act="ai-visit">${ic('cross',16)}Creează vizită din document</button>${rows.length?`<button class="btn ghost block" data-act="ai-labs">${ic('flask',16)}Creează raport de analize</button>`:''}</div>`;
   AI.last={d,r,rows,dc,fc};
   openPanel('Ce a citit AI-ul',html,true)}
 function aiVisitFromDoc(){
   const {d,r,dc,fc}=AI.last,types=[];
   if(r.kind==='analize')types.push('Analize');else if(r.kind==='vaccin')types.push('Vaccin');else if(r.kind==='imagistica')types.push('Ecografie');else types.push('Consultație');
   const sp=r.specialty&&META.specialties.find(s=>norm(s)===norm(r.specialty));
-  const pre={date:okDate(r.date)||d.date,status:'efectuată',types,reason:(KINDS[r.kind]||'Vizită')+(r.facility?' · '+r.facility:''),diagnosis:r.diagnosis||'',treatment:r.treatment||'',notes:r.summary||'',doctorId:dc?dc.id:'',facilityId:fc?fc.id:'',specialty:sp||'',cost:r.cost!=null?r.cost:null,next:okDate(r.next_control_date)||''};
-  openForm('visit',{pid:d.personId,prefill:pre,nested:true,onSaved:v=>{if(v){const x=get('docs',d.id);if(x){x.visitId=v.id;save('docs',x)}}closeAllPanels();render(true);toast('Vizită creată și legată de document')}})}
+  const pre={date:okDate(r.date)||d.date,status:'efectuată',types,reason:(KINDS[r.kind]||'Vizită')+(r.facility?' · '+r.facility:''),diagnosis:r.diagnosis||'',treatment:r.treatment||'',notes:'',doctorId:dc?dc.id:'',facilityId:fc?fc.id:'',specialty:sp||'',cost:r.cost!=null?r.cost:null,next:okDate(r.next_control_date)||''};
+  openForm('visit',{pid:d.personId,prefill:pre,nested:true,onSaved:v=>{if(v){const x=get('docs',d.id);if(x){x.visitId=v.id;save('docs',x)}if(r.summary||r.diagnosis||r.treatment)addAiEntry(v.id,{docId:d.id,title:'Citit din '+d.name,text:docSummaryText(r)})}closeAllPanels();render(true);toast('Vizită creată și legată de document')}})}
 function aiLabsFromDoc(){
   const {d,r,rows,fc}=AI.last;
   openForm('labreport',{pid:d.personId,prefill:{date:okDate(r.date)||d.date,facilityId:fc?fc.id:'',values:rows},nested:true,onSaved:rep=>{if(rep){const x=get('docs',d.id);if(x){x.reportId=rep.id;save('docs',x)}}closeAllPanels();render(true);toast('Raport de analize creat')}});
@@ -1873,7 +2126,14 @@ async function aiAct(a,el){
     case 'ai-ocrdel':{const d=get('docs',el.dataset.id);if(d){delete d.text;save('docs',d);closePanel();openDoc(d.id)}break}
     case 'ai-explain':closePanel();aiExplainDoc(el.dataset.id);break;
     case 'ai-visitdocs':aiVisitDocs(el.dataset.id);break;
-    case 'ai-savenote':{const x=AI.lastExplain;if(x){save('notes',{personId:x.pid||S.pid,date:todayS(),title:'Explicație AI · '+x.title,text:x.text,conditionIds:x.condIds});closeAllPanels();render(true);toast('Salvat la Note')}break}
+    case 'ai-savenote':{const x=AI.lastExplain;if(x){save('notes',{personId:x.pid||S.pid,date:x.date||todayS(),title:'Explicație AI · '+x.title,text:x.text,conditionIds:x.condIds||[],docId:x.docId||null,visitId:x.vid||null});closeAllPanels();render(true);toast('Salvat la Note, cu data documentului')}break}
+    case 'ai-savevisit':{const x=AI.lastExplain;if(x&&x.vid){addAiEntry(x.vid,{docId:x.docId,title:x.title,text:x.text});closeAllPanels();render(true);toast('Salvat în vizită')}break}
+    case 'ai-delentry':confirmPanel('Ștergi concluzia AI?','Se șterge doar această concluzie din vizită, nu documentul.','ai-delentrygo',{vid:el.dataset.vid,eid:el.dataset.eid});break;
+    case 'ai-delentrygo':{const v=get('visits',el.dataset.vid);if(v){v.aiNotes=(v.aiNotes||[]).filter(e=>e.id!==el.dataset.eid);save('visits',v)}closeAllPanels();render(true);break}
+    case 'ai-sumvisit':{const x=AI.last;if(x&&x.d.visitId){addAiEntry(x.d.visitId,{docId:x.d.id,title:'Citit din '+x.d.name,text:docSummaryText(x.r)});closeAllPanels();render(true);toast('Rezumatul a fost salvat în vizită')}break}
+    case 'ai-trpaste':closePanel();trPaste(el.dataset.id);break;
+    case 'ai-trsave':{const d=get('docs',el.dataset.id);if(d){const t=($('#tr-text').value||'').trim();if(t)d.text=t;else delete d.text;save('docs',d);closeAllPanels();toast('Transcrierea e salvată');openDoc(d.id)}break}
+    case 'ai-sumaudio':closePanel();aiSumAudio(el.dataset.id);break;
     case 'ai-doc':closePanel();aiDoc(el.dataset.id);break;
     case 'ai-visit':aiVisitFromDoc();break;
     case 'ai-labs':aiLabsFromDoc();break;
@@ -1899,21 +2159,67 @@ async function aiOcr(id){
 function visitCtx(v){
   const c=(v.conditionIds||[]).map(cname).filter(Boolean).join(', ');
   return ['Context din aplicație (poate fi incomplet):','Data vizitei: '+v.date,v.reason?'Motiv: '+v.reason:'',v.diagnosis?'Diagnostic notat: '+v.diagnosis:'',v.treatment?'Tratament notat: '+v.treatment:'',c?'Afecțiuni: '+c:'',(v.types||[]).length?'Tipuri: '+v.types.join(', '):''].filter(Boolean).join('\n')}
-async function aiExplain(files,ctx,title,condIds,pid){
-  openPanel('Se citește…',`<div class="callout">${ic('spark')}<div>AI-ul citește documentul și pregătește explicația.</div></div>`);
-  try{const j=await claude({system:EXPLAIN_SYS,max_tokens:3000,messages:[{role:'user',content:(await fileBlocks(files)).concat([{type:'text',text:(ctx?ctx+'\n\n':'')+'Explică-mi acest document.'}])}]});
-    const t=textOf(j).trim();closePanel();AI.lastExplain={title,text:t,condIds:condIds||[],pid};
-    openPanel('Explicație AI',`<div class="callout warn">${ic('alert',16)}<div>Explicație generată de AI, nu diagnostic. Poate greși. Compară cu documentul și discută cu medicul.</div></div><div class="bub ai" style="max-width:100%;margin-top:12px">${mdLite(t)}</div><div class="fbtns"><button class="btn block" data-act="ai-savenote">${ic('note',16)}Salvează ca notă</button><button class="btn ghost block" data-act="close">Închide</button></div>`,true)}
+function showExplain(t,m){
+  AI.lastExplain=Object.assign({text:t},m);
+  openPanel('Explicație AI',`<div class="callout warn">${ic('alert',16)}<div>Explicație generată de AI, nu diagnostic. Poate greși. Compară cu documentul și discută cu medicul.</div></div><div class="bub ai" style="max-width:100%;margin-top:12px">${mdLite(t)}</div><div class="fbtns">${m.vid?`<button class="btn block" data-act="ai-savevisit">${ic('check',16)}Salvează în vizită (concluzii AI)</button>`:`<button class="btn block" data-act="ai-savenote">${ic('note',16)}Salvează ca notă${m.date?' (data '+fd(m.date)+')':''}</button>`}<button class="btn ghost block" data-act="close">Închide</button></div>`,true)}
+function addAiEntry(vid,e){const v=get('visits',vid);if(!v)return;v.aiNotes=(v.aiNotes||[]).concat([{id:uid(),at:Date.now(),docId:e.docId||null,title:e.title||'',text:e.text||''}]);save('visits',v)}
+function docSummaryText(r){
+  const L=[];if(r.summary)L.push(r.summary);if(r.diagnosis)L.push('**Diagnostic:** '+r.diagnosis);if(r.treatment)L.push('**Tratament / recomandări:** '+r.treatment);
+  if((r.medications||[]).length)L.push('**Medicamente:** '+r.medications.map(m=>[m.name,m.dose,m.frequency].filter(Boolean).join(' ')).join('; '));
+  if(okDate(r.next_control_date))L.push('**Următorul control:** '+fd(r.next_control_date));return L.join('\n\n')}
+async function aiExplain(files,ctx,meta){
+  openPanel('Se citește…',`<div class="callout">${ic('spark')}<div>AI-ul pregătește explicația.</div></div>`);
+  try{const bl=await fileBlocks(files);
+    const j=await claude({system:EXPLAIN_SYS,max_tokens:3000,messages:[{role:'user',content:bl.concat([{type:'text',text:(ctx?ctx+'\n\n':'')+(bl.length?'Explică-mi acest document.':'Explică-mi informațiile de mai sus.')}])}]});
+    const t=textOf(j).trim();closePanel();showExplain(t,meta)}
   catch(e){closePanel();toast(e.message)}}
 async function aiExplainDoc(id){
   const d=get('docs',id),fl=await docFiles([id]);if(!d||!fl.length){toast('Fișierul nu e pe acest dispozitiv.');return}
   const v=get('visits',d.visitId);
-  aiConsent('Documentul „'+d.name+'”',()=>aiExplain(fl,v?visitCtx(v):'',d.name,d.conditionIds,d.personId))}
+  aiConsent('Documentul „'+d.name+'”',()=>aiExplain(fl,v?visitCtx(v):'',{title:d.name,vid:d.visitId||null,docId:d.id,date:d.date,pid:d.personId,condIds:d.conditionIds||[]}))}
 async function aiVisitDocs(vid){
-  const v=get('visits',vid);if(!v)return;const ds=mine('docs',v.personId).filter(x=>x.visitId===vid);
-  if(!ds.length){toast('Vizita nu are documente.');return}
+  const v=get('visits',vid);if(!v)return;const all=mine('docs',v.personId).filter(x=>x.visitId===vid),ds=all.filter(x=>x.type!=='audio'),tr=all.filter(x=>x.type==='audio'&&x.text);
+  if(!ds.length&&!tr.length){toast('Vizita nu are documente de citit (pentru audio, lipește mai întâi transcrierea).');return}
   const fl=await docFiles(ds.slice(0,6).map(x=>x.id));
-  aiConsent(ds.length+(ds.length>1?' documente':' document')+' de la vizita din '+fd(v.date),()=>aiExplain(fl,visitCtx(v),'vizita din '+fd(v.date),v.conditionIds,v.personId))}
+  const ctx=visitCtx(v)+tr.map(x=>'\n\nTranscrierea discuției „'+x.name+'”:\n'+x.text).join('');
+  aiConsent((ds.length+tr.length)+(ds.length+tr.length>1?' documente':' document')+' de la vizita din '+fd(v.date),()=>aiExplain(fl,ctx,{title:'documentele vizitei din '+fd(v.date),vid:v.id,docId:null,date:v.date,pid:v.personId,condIds:v.conditionIds||[]}))}
+
+/* ───── audio: transcriere lipită manual, rezumat cu AI ───── */
+const TR_SYS='Primești transcrierea unei discuții cu un medic, în limba română. Rezumă strict ce se spune în text: 1) ce a spus medicul despre situație sau diagnostic; 2) recomandări și tratament menționate; 3) analize sau investigații cerute; 4) următorul control; 5) întrebări rămase fără răspuns. Nu adăuga nimic din afara textului, nu pune diagnostice și nu recomanda schimbarea tratamentelor. Dacă ceva nu e clar în text, spui asta. Transcrierea poate conține greșeli de recunoaștere vocală.';
+function trPaste(id){const d=get('docs',id);if(!d)return;
+  openPanel('Transcrierea discuției',`<p class="sub" style="margin-bottom:10px">Aplicația nu trimite fișiere audio către AI. Transcrie înregistrarea în telefon (de exemplu cu aplicația de înregistrare vocală Samsung sau cu dictarea de pe iPhone) și lipește textul aici. Se caută în Istoric și poate fi rezumat cu AI.</p><label class="f">Text<textarea id="tr-text" style="min-height:220px">${esc(d.text||'')}</textarea></label><div class="fbtns"><button class="btn block" data-act="ai-trsave" data-id="${id}">Salvează</button></div>`)}
+async function aiSumAudio(id){
+  const d=get('docs',id);if(!d)return;if(!d.text){toast('Lipește mai întâi transcrierea.');return}
+  aiConsent('Textul transcrierii „'+d.name+'”',async()=>{
+    openPanel('Se rezumă…',`<div class="callout">${ic('spark')}<div>AI-ul rezumă transcrierea.</div></div>`);
+    try{const j=await claude({system:TR_SYS,max_tokens:2500,messages:[{role:'user',content:'Transcrierea discuției cu medicul (data '+d.date+'):\n\n'+d.text}]});
+      const t=textOf(j).trim();if(!t)throw new Error('AI-ul nu a returnat text.');closePanel();showExplain(t,{title:'discuția „'+d.name+'”',vid:d.visitId||null,docId:d.id,date:d.date,pid:d.personId,condIds:d.conditionIds||[]})}
+    catch(e){closePanel();toast(e.message)}})}
+
+/* ───── Garmin: citire din captură ───── */
+const TOOL_GARMIN={name:'report_garmin_week',description:'Raportează valorile din ecranul „Ultimele 7 zile” din Garmin Connect.',input_schema:{type:'object',properties:{
+  week_end_date:{type:'string',description:'YYYY-MM-DD, doar dacă apare o dată în imagine'},
+  strength_count:{type:'number',description:'Numărul de antrenamente de forță'},strength_duration:{type:'string',description:'Durata totală, exact ca în imagine (ex. 2:21:39)'},
+  run_count:{type:'number',description:'Numărul de alergări'},run_distance_km:{type:'number',description:'Distanța totală în km; 14,3 înseamnă 14.3'},run_duration:{type:'string',description:'Durata alergărilor, doar dacă apare'},
+  other_count:{type:'number',description:'Numărul altor activități'},sleep_score_avg:{type:'number'},sleep_duration_avg:{type:'string',description:'Durata medie a somnului, ex. 7h 25m'},
+  steps_avg:{type:'number',description:'Număr întreg; 5.841 înseamnă 5841'},resting_hr:{type:'number',description:'Puls mediu de repaus'},stress_avg:{type:'number'},weight_kg:{type:'number',description:'80,6 înseamnă 80.6'},
+  uncertain:{type:'array',items:{type:'string'},description:'Câmpurile care nu se citesc sigur'}}}};
+const GARMIN_SYS='Citești o captură de ecran din Garmin Connect (secțiunea „Ultimele 7 zile”, în limba română). Raportezi doar valorile vizibile, exact cum apar. Formatul românesc: virgula e separator zecimal, punctul separă miile. Nu inventezi valori: ce lipsește, omiți. Răspunzi doar prin instrumentul oferit.';
+async function scanGarmin(files){
+  const bl=await fileBlocks(files);
+  const j=await claude({system:GARMIN_SYS,max_tokens:1500,tools:[TOOL_GARMIN],tool_choice:{type:'tool',name:TOOL_GARMIN.name},messages:[{role:'user',content:bl.concat([{type:'text',text:'Extrage valorile din această captură Garmin Connect.'}])}]});
+  return toolInput(j,TOOL_GARMIN.name)}
+function wlPrefill(r){const n=v=>v==null||v===''||isNaN(v)?undefined:+v;
+  return {date:okDate(r.week_end_date)||todayS(),strN:n(r.strength_count),strDur:r.strength_duration||'',runN:n(r.run_count),runKm:n(r.run_distance_km),runDur:r.run_duration||'',othN:n(r.other_count),sleepScore:n(r.sleep_score_avg),sleepDur:r.sleep_duration_avg||'',steps:r.steps_avg!=null?String(Math.round(r.steps_avg)):'',rhr:n(r.resting_hr),stress:n(r.stress_avg),weight:n(r.weight_kg)}}
+function wlScan(f){
+  aiConsent('Captura din Garmin Connect',async()=>{
+    openPanel('Se citește captura…',`<div class="callout">${ic('spark')}<div>AI-ul citește valorile din imagine.</div></div>`);
+    try{const r=await scanGarmin([f]);closePanel();openForm('wellness',{prefill:wlPrefill(r)});
+      const form=$('form[data-form=wellness]');const un=(r.uncertain||[]);
+      if(form)form.insertAdjacentHTML('afterbegin',`<div class="callout warn" style="margin-bottom:12px">${ic('alert',16)}<div><b>Valori citite de AI din captură.</b> Verifică-le cu ecranul Garmin înainte de salvare. Data nu apare în captură: pune ultima zi din interval. HRV și VO2 max se adaugă manual.${un.length?' Nesigur: '+esc(un.join(', '))+'.':''}</div></div>`)}
+    catch(e){closePanel();toast(e.message)}})}
+function wlAct(a,el){if(a==='wl-import'){pickFile('image/*',wlScan)}}
+function hbAct(a,el){if(a==='hb-pick')hbPick()}
 
 /* ═════ 50 · evenimente, istoric (butonul Înapoi), pornire ═════ */
 let HD=0,HSKIP=0,HPEND=0,HSCHED=false;
@@ -1935,6 +2241,7 @@ function confirmPanel(title,text,act,data){
 function openV(v,el){
   if(v.sheet){openDetail(v.sheet,v.id);return}
   if(v.note){openNote(v.note);return}
+  if(v.doc){openDoc(v.doc);return}
   if(v.pid&&v.pid!==S.pid&&get('persons',v.pid)){S.pid=v.pid}
   const go=Object.assign({},v);delete go.pid;
   if(ROOTS.indexOf(go.t)>=0){goTab(go.t);return}
@@ -1965,6 +2272,13 @@ document.addEventListener('click',async ev=>{
   switch(a){
     case 'open':openV(JSON.parse(d.v),el);break;
     case 'add':{openForm(d.type,{prefill:d.prefill?JSON.parse(d.prefill):null});break}
+    case 'fab':fabPanel();break;
+    case 'lview':S.lf.view=d.v;render(true);break;
+    case 'punit':S.pu[d.n]=d.v;render(true);break;
+    case 'wm':S.wm=d.v;render(true);break;
+    case 'ptheme':themePanel(d.n);break;
+    case 'pthemego':{const ids=$$('input[name=th]:checked',el.closest('.pb')).map(x=>x.value);if(!ids.length){toast('Alege cel puțin o temă.');break}META.paramTheme[d.n]=ids;saveMeta();closeAllPanels();render(true);toast('Tema a fost salvată');break}
+    case 'pthemereset':delete META.paramTheme[d.n];saveMeta();closeAllPanels();render(true);break;
     case 'edit':openForm(d.type,{id:d.id});break;
     case 'quick':{const f=d.for,q=d.q;openForm(q,{nested:true,onSaved:rec=>{if(rec)quickAdded(f,q,rec)}});break}
     case 'close':closePanel();break;
@@ -2021,7 +2335,7 @@ document.addEventListener('click',async ev=>{
       $$('.vrow',box).filter(r=>!$('[data-f=param]',r).value.trim()&&!$('[data-f=val]',r).value.trim()).forEach(r=>r.remove());
       ls.forEach(l=>{if(have.indexOf(norm(l.param))>=0)return;box.insertAdjacentHTML('beforeend',rowHtml({param:l.param,val:'',u:l.u,lo:l.lo!=null?nv(l.lo):'',hi:l.hi!=null?nv(l.hi):''}))});
       toast('Am copiat parametrii din '+fd(reps[0].date)+'. Completează valorile.');break}
-    default:if(a.indexOf('sy-')===0)syAct(a,el);else if(a.indexOf('ai-')===0)aiAct(a,el)
+    default:if(a.indexOf('sy-')===0)syAct(a,el);else if(a.indexOf('ai-')===0)aiAct(a,el);else if(a.indexOf('wl-')===0)wlAct(a,el);else if(a.indexOf('hb-')===0)hbAct(a,el)
   }});
 
 /* câmpuri care reacționează la schimbare */
@@ -2090,13 +2404,13 @@ const csvOf=rows=>'﻿'+rows.map(r=>r.map(csvCell).join(';')).join('\r\n')+'\r\n
 const safeName=s=>String(s||'fisier').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9._ -]+/g,'_').trim().slice(0,60)||'fisier';
 async function buildArchive(){
   const files=[],add=(name,text)=>files.push({name,data:te.encode(text)});
-  const pn=id=>{const p=get('persons',id);return p?p.name:''},ex=m=>/pdf/.test(m||'')?'.pdf':/png/.test(m||'')?'.png':/svg/.test(m||'')?'.svg':/webp/.test(m||'')?'.webp':'.jpg';
+  const pn=id=>{const p=get('persons',id);return p?p.name:''},ex=m=>/pdf/.test(m||'')?'.pdf':/^audio\//.test(m||'')?'.'+(({'audio/mp4':'m4a','audio/mpeg':'mp3','audio/wav':'wav','audio/aac':'aac','audio/ogg':'ogg','audio/amr':'amr'})[m]||'m4a'):/png/.test(m||'')?'.png':/svg/.test(m||'')?'.svg':/webp/.test(m||'')?'.webp':'.jpg';
   add('CITESTE-MA.txt',`Arhivă din Jurnal medical de familie, generată la ${todayS()}.\r\n\r\nFișiere:\r\n- date.json: toate datele, într-un singur fișier JSON (fără documentele binare).\r\n- *.csv: fiecare tip de înregistrare, separat prin punct și virgulă, în UTF-8. Se deschid în Excel sau LibreOffice.\r\n- documente/<persoană>/: fișierele atașate (poze, PDF), cu numele lor; lista e în documente.csv.\r\n\r\nLegăturile dintre înregistrări (afecțiune, vizită, medic, unitate) sunt date prin coloanele cu denumiri; identificatorii interni sunt în date.json.\r\n`);
   const J={app:'jurnal-medical',exported:new Date().toISOString(),meta:{specialties:META.specialties,visitTypes:META.visitTypes,currency:META.currency,paramAliases:META.paramAliases},data:{}};DATA.forEach(s=>J.data[s]=DB[s]);
   add('date.json',JSON.stringify(J,null,1));
   add('persoane.csv',csvOf([['Nume','Data nașterii','Sex','Relația','Grupa sanguină','Alergii','Note']].concat(DB.persons.map(p=>[p.name,p.born,p.sex,p.rel,p.blood,(p.allergies||[]).join('; '),p.notes]))));
   add('afectiuni.csv',csvOf([['Persoană','Afecțiune','Specialitate','Cronică','Perioade','Note']].concat(DB.conditions.map(c=>[pn(c.personId),c.name,c.specialty,c.chronic?'da':'',condPeriods(c).map(p=>(p.start||'?')+' – '+(p.end||'în curs')).join('; '),c.notes]))));
-  add('vizite.csv',csvOf([['Persoană','Data','Ora','Stare','Tipuri','Medic','Unitate','Specialitate','Motiv','Diagnostic','Tratament recomandat','Concluzii','Afecțiuni','Cost','Moneda','Următorul control']].concat(DB.visits.map(v=>[pn(v.personId),v.date,v.time,v.status,(v.types||[]).join('; '),dname(v.doctorId),fname(v.facilityId),Array.from(specsOf('visit',v))[0]||'',v.reason,v.diagnosis,v.treatment,v.notes,(v.conditionIds||[]).map(cname).join('; '),v.cost,META.currency,v.next]))));
+  add('vizite.csv',csvOf([['Persoană','Data','Ora','Stare','Tipuri','Medic','Unitate','Specialitate','Motiv','Diagnostic','Tratament recomandat','Concluzii','Afecțiuni','Cost','Moneda','Următorul control','Concluzii AI din documente']].concat(DB.visits.map(v=>[pn(v.personId),v.date,v.time,v.status,(v.types||[]).join('; '),dname(v.doctorId),fname(v.facilityId),Array.from(specsOf('visit',v))[0]||'',v.reason,v.diagnosis,v.treatment,v.notes,(v.conditionIds||[]).map(cname).join('; '),v.cost,META.currency,v.next,(v.aiNotes||[]).map(a=>a.text).join(' ')]))));
   add('simptome.csv',csvOf([['Persoană','Simptom','De la','Până la','Intensitate','Afecțiuni','Note']].concat(DB.symptoms.map(x=>[pn(x.personId),x.name,x.start,x.end,x.intensity,(x.conditionIds||[]).map(cname).join('; '),x.notes]))));
   add('medicamente.csv',csvOf([['Persoană','Medicament','Descriere','Dozaj','Frecvență','Început','Final','Afecțiuni','Note']].concat(DB.meds.map(m=>[pn(m.personId),m.name,m.description,m.dose,m.frequency,m.start,m.end,(m.conditionIds||[]).map(cname).join('; '),m.notes]))));
   const rows=[['Persoană','Data','Laborator','Parametru (cum e pe buletin)','Parametru grupat','Valoare','Valoare text','Unitate','Referință min','Referință max']];
@@ -2104,12 +2418,14 @@ async function buildArchive(){
   add('analize.csv',csvOf(rows));
   add('vaccinuri.csv',csvOf([['Persoană','Vaccin','Stare','Data','Vârsta recomandată','Note']].concat(DB.vaccines.map(v=>[pn(v.personId),v.name,v.status,v.date,v.age,v.note]))));
   add('masuratori.csv',csvOf([['Persoană','Data','Înălțime cm','Greutate kg','Puls','Tensiune sistolică','Tensiune diastolică','Sursă','Note']].concat(DB.measures.map(m=>[pn(m.personId),m.date,m.height,m.weight,m.pulse,m.sys,m.dia,m.source,m.note]))));
-  add('note.csv',csvOf([['Persoană','Data','Titlu','Text','Afecțiuni']].concat(DB.notes.map(n=>[pn(n.personId),n.date,n.title,n.text,(n.conditionIds||[]).map(cname).join('; ')]))));
+  add('note.csv',csvOf([['Persoană','Data','Titlu','Text','Afecțiuni','Document legat','Vizită legată']].concat(DB.notes.map(n=>[pn(n.personId),n.date,n.title,n.text,(n.conditionIds||[]).map(cname).join('; '),(get('docs',n.docId)||{}).name||'',(get('visits',n.visitId)||{}).date||'']))));
+  add('garmin-saptamani.csv',csvOf([['Persoană','Săptămâna încheiată','Antrenamente forță','Durată forță','Alergări','Km alergare','Durată alergare','Alte activități','Scor somn','Somn mediu','Pași medie','Puls repaus','Stres','Greutate kg','HRV','VO2 max','Note']].concat(DB.wellness.slice().sort(cmpDateAsc).map(x=>[pn(x.personId),x.date,x.strN,x.strSec!=null?fmtDur(x.strSec,true):'',x.runN,x.runKm,x.runSec!=null?fmtDur(x.runSec,true):'',x.othN,x.sleepScore,x.sleepSec!=null?fmtDur(x.sleepSec):'',x.steps,x.rhr,x.stress,x.weight,x.hrv,x.vo2,x.note]))));
+  add('stil-de-viata.csv',csvOf([['Persoană','Obicei','Frecvență','Cantitate','Unitate','Durată','Început','Final','Actual','Note']].concat(DB.habits.map(h=>[pn(h.personId),h.name,h.freq,h.amount,h.unit,h.duration,h.start,h.end,hbCurrent(h)?'da':'nu',h.note]))));
   add('medici.csv',csvOf([['Nume','Specialități','Unități','Telefon','E-mail','Note']].concat(DB.doctors.map(d=>[d.name,(d.specialties||[]).join('; '),(d.facilityIds||[]).map(fname).join('; '),d.phone,d.email,d.notes]))));
   add('unitati.csv',csvOf([['Nume','Tip','Localitate','Adresă','Telefon','Note']].concat(DB.facilities.map(f=>[f.name,f.kind,f.city,f.address,f.phone,f.notes]))));
   const drows=[['Persoană','Data','Nume','Tip','Fișier în arhivă','Afecțiuni','Text citit de AI']],used={};
   for(const d of DB.docs){const b=await getBlob(d.id);let path='';
-    if(b){const base='documente/'+safeName(pn(d.personId))+'/'+(d.date||'fara-data')+'_'+safeName(d.name);let p=base+ex(b.type),i=1;while(used[p])p=base+'_'+(++i)+ex(b.type);used[p]=1;path=p;files.push({name:p,data:new Uint8Array(await b.arrayBuffer())})}
+    if(b){const base='documente/'+safeName(pn(d.personId))+'/'+(d.date||'fara-data')+'_'+safeName(d.name);let p=base+ex(d.type==='audio'?audioMime(d):b.type),i=1;while(used[p])p=base+'_'+(++i)+ex(d.type==='audio'?audioMime(d):b.type);used[p]=1;path=p;files.push({name:p,data:new Uint8Array(await b.arrayBuffer())})}
     drows.push([pn(d.personId),d.date,d.name,d.tag,path,(d.conditionIds||[]).map(cname).join('; '),d.text||''])}
   add('documente.csv',csvOf(drows));
   return makeZip(files)}

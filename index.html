@@ -328,6 +328,7 @@ body.printing .fab{display:none}
 .urg .uv{font-size:19px;font-weight:700;line-height:1.35;margin-top:2px}
 .urg.bad .uv{color:var(--bad)}
 .urg .uv .sub{font-size:14px;font-weight:500}
+.frow{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:14px;word-break:break-word}
 </style>
 </head>
 <body>
@@ -341,7 +342,7 @@ body.printing .fab{display:none}
 </div>
 <script>
 /* ═════ 00 · nucleu: utilitare, iconițe, baza de date locală ═════ */
-const VERSION='3.4.0';
+const VERSION='3.4.1';
 const $=(s,r)=>(r||document).querySelector(s);
 const $$=(s,r)=>Array.prototype.slice.call((r||document).querySelectorAll(s));
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1027,7 +1028,7 @@ function fieldHtml(f,rec,ctx){
       return `<div class="f" data-rows="1"><span class="fl">${lab}</span><div class="vrows" id="${id}">${rows.map(rowHtml).join('')}</div><div class="rowbtns"><button type="button" class="btn ghost sm" data-act="rowadd">${ic('plus',14)}Parametru</button><button type="button" class="btn ghost sm" data-act="rowprev">Parametrii din ultima analiză</button></div><datalist id="dl-params">${allParams().map(x=>`<option value="${esc(x)}">`).join('')}</datalist>${help}</div>`}
     case 'periods':{const rows=(v&&v.length)?v:[{start:'',end:''}];return `<div class="f"><span class="fl">${lab}</span><div class="prows">${rows.map(perHtml).join('')}</div><div class="rowbtns"><button type="button" class="btn ghost sm" data-act="peradd">${ic('plus',14)}Încă o perioadă</button></div>${help}</div>`}
     case 'photo':return `<div class="f"><span class="fl">${lab}</span><div class="phrow"><span class="phprev av lg" style="${v?`background-image:url(${v});background-size:cover;background-position:center`:''}">${v?'':esc((rec.name||'?')[0])}</span><div class="phbtns"><input type="file" accept="image/*" data-change="photoPick"><button type="button" class="btn ghost sm" data-act="photoclear">Șterge poza</button></div></div><input type="hidden" name="${f.k}" value="${esc(v||'')}">${help}</div>`;
-    case 'files':return `<div class="f"><span class="fl">${lab}</span><input type="file" id="${id}" name="${f.k}" multiple accept="${f.audio?'image/*,application/pdf,audio/*,.m4a,.mp3,.wav,.aac,.ogg,.opus,.amr,.3gp':'image/*,application/pdf'}">${help}${f.ai?`<div><button type="button" class="btn ghost sm" data-act="ai-lab">${ic('spark',14)}Extrage valorile din buletin cu AI</button></div>`:''}</div>`;
+    case 'files':return `<div class="f"><span class="fl">${lab}</span><input type="file" id="${id}" name="${f.k}" multiple data-change="filesPick" accept="${f.audio?'image/*,application/pdf,audio/*,.m4a,.mp3,.wav,.aac,.ogg,.opus,.amr,.3gp':'image/*,application/pdf'}"><div class="flist" aria-live="polite"></div>${help}${f.ai?`<div><button type="button" class="btn ghost sm" data-act="ai-lab">${ic('spark',14)}Extrage valorile din buletin cu AI</button></div>`:''}</div>`;
   }
   return ''}
 function collect(form,fields){
@@ -1039,7 +1040,7 @@ function collect(form,fields){
       case 'multi':out[f.k]=$$('input[name="'+f.k+'[]"]:checked',form).map(x=>x.value);if(f.custom){const n=form.elements[f.k+'__new'];out[f.k+'__new']=n?n.value.trim():''}break;
       case 'rows':out[f.k]=$$('.vrow',form).map(r=>({param:$('[data-f=param]',r).value.trim(),val:$('[data-f=val]',r).value.trim(),u:$('[data-f=u]',r).value.trim(),lo:$('[data-f=lo]',r).value.trim(),hi:$('[data-f=hi]',r).value.trim()})).filter(r=>r.param||r.val);break;
       case 'periods':out[f.k]=$$('.prow',form).map(r=>({start:$('[data-f=pstart]',r).value,end:$('[data-f=pend]',r).value})).filter(p=>p.start||p.end);break;
-      case 'files':out[f.k]=el&&el.files?Array.prototype.slice.call(el.files):[];break;
+      case 'files':out[f.k]=filesOf(el);break;
       default:out[f.k]=el?String(el.value).trim():'';
     }});
   return out}
@@ -2131,7 +2132,7 @@ const okDate=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||'')?d:'';
 /* ───── scanare în formularul de analize ───── */
 async function aiLab(el){
   const form=el.closest('form');if(!form)return;
-  let files=Array.prototype.slice.call((form.elements.files&&form.elements.files.files)||[]);
+  let files=filesOf(form.elements.files);
   if(!files.length&&form.dataset.id){const ds=DB.docs.filter(d=>d.reportId===form.dataset.id);for(const d of ds){const b=await getBlob(d.id);if(b)files.push(b)}}
   if(!files.length){toast('Alege mai întâi poza sau PDF-ul buletinului, la „Buletin”.');return}
   aiConsent('Poza sau PDF-ul buletinului',async()=>{
@@ -2387,6 +2388,10 @@ function pdfPanel(){
   $$('[data-anx]',el).forEach(async d=>{try{const b=await getBlob(d.dataset.anx);if(!b)return;const u=URL.createObjectURL(b);d.innerHTML=`<img src="${u}" alt="" style="max-width:100%;border:1px solid #ddd;margin:6px 0"><div class="sk0">${esc((get('docs',d.dataset.anx)||{}).name||'')}</div>`}catch(e){}})}
 
 function download(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+/* fișiere alese în mai multe reprize: se adună, nu se înlocuiesc */
+function filesOf(el){if(!el)return [];return (el._acc||[]).concat(Array.prototype.slice.call(el.files||[]))}
+function filesDraw(el){const box=el.parentNode.querySelector('.flist');if(!box)return;const a=el._acc||[];
+  box.innerHTML=a.length?`<div class="sub" style="margin:8px 0 4px">${a.length} ${a.length===1?'fișier ales':'fișiere alese'}. Poți apăsa din nou pe buton ca să mai adaugi.</div>`+a.map((f,i)=>`<div class="frow"><span class="grow">${esc(f.name)} <span class="sub">${f.size>=1048576?nf(f.size/1048576,1)+' MB':Math.max(1,Math.round(f.size/1024))+' KB'}</span></span><button type="button" class="btn ghost sm" data-act="fdel" data-i="${i}" aria-label="Scoate ${esc(f.name)}">${ic('x',14)}</button></div>`).join(''):''}
 function pickFile(accept,cb){const i=document.createElement('input');i.type='file';i.accept=accept;i.onchange=()=>{if(i.files&&i.files[0])cb(i.files[0])};i.click()}
 
 async function copyText(t){
@@ -2401,6 +2406,7 @@ document.addEventListener('click',async ev=>{
     case 'open':openV(JSON.parse(d.v),el);break;
     case 'add':{openForm(d.type,{prefill:d.prefill?JSON.parse(d.prefill):null});break}
     case 'fab':fabPanel();break;
+    case 'fdel':{const inp=el.closest('.f').querySelector('input[type=file]');if(inp&&inp._acc){inp._acc.splice(+d.i,1);filesDraw(inp)}break}
     case 'remdone':{const r=get('reminders',d.id);if(r&&r.repeat){const nx=remNext(r);r.lastDone=todayS();r.date=nx;r.cal=false;save('reminders',r);closeAllPanels();render(true);toast('Următorul: '+fd(nx))}break}
     case 'pconv':S.pc[d.n]=S.pc[d.n]===false;render(true);break;
     case 'pdupgo':{dupMerge(d.a,d.b);render(true);toast('Analizele au fost unite');break}
@@ -2477,6 +2483,7 @@ document.addEventListener('click',async ev=>{
 /* câmpuri care reacționează la schimbare */
 const loadImg=f=>new Promise((res,rej)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>{URL.revokeObjectURL(u);res(i)};i.onerror=()=>rej(new Error('img'));i.src=u});
 const CHANGE={
+  filesPick(el){const a=el._acc=el._acc||[];Array.prototype.slice.call(el.files||[]).forEach(f=>{if(!a.some(x=>x.name===f.name&&x.size===f.size&&x.lastModified===f.lastModified))a.push(f)});try{el.value=''}catch(e){}filesDraw(el)},
   async photoPick(el){const f=el.files&&el.files[0];if(!f)return;try{const im=await loadImg(f),k=256,m=Math.min(im.naturalWidth,im.naturalHeight),c=document.createElement('canvas');c.width=c.height=k;c.getContext('2d').drawImage(im,(im.naturalWidth-m)/2,(im.naturalHeight-m)/2,m,m,0,0,k,k);const u=c.toDataURL('image/jpeg',0.82),fr=el.closest('.f');fr.querySelector('input[type=hidden]').value=u;const pv=fr.querySelector('.phprev');pv.style.backgroundImage='url('+u+')';pv.style.backgroundSize='cover';pv.textContent=''}catch(e){toast('Nu pot citi imaginea. Încearcă o poză JPG sau PNG.')}},
   visitDate(el){const f=el.form,st=f.elements.status,t=todayS();if(!st)return;if(el.value>t&&st.value==='efectuată')st.value='planificată';else if(el.value&&el.value<=t&&st.value==='planificată')st.value='efectuată'},
   visitDoctor(el){const f=el.form,d=get('doctors',el.value);if(!d)return;
